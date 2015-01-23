@@ -1,0 +1,51 @@
+To install TGSim, copy the the archive with TGSim from the website, unzip it:
+
+		unzip TumorGenomeSimulator.v1.0.zip
+
+Compile the source code:
+
+		make
+
+or use the binary version (compiled for Linux 64 bit).
+
+To run the compiled tool type:
+
+		./tgsim -conf config.txt
+
+You can find an example of a config file in the archive. In the config you can provide *two* fasta files to simulate a diploid genome. For example, you can introduce SNPs and short indels in hg38.fa with PIRS.
+
+In the current version there is a fixed number and length of structural variants to add (the order is also fixed):
+
+	addInversions(number = 3, minimal size of region = 6000, maximal size of region = 750000);
+	addDuplications(number = 2,minimal size of region = 3000, maximal size of region = 10000);
+	addDeletions(number = 2,minimal size of region = 10000, maximal size of region = 700000);
+	duplicateGenome();
+	deleteChromosomes(number = 8);
+	duplicateChromosomes(number = 2);
+	addTranslocations(number = 1,type = BALANCED);
+	addTranslocations(number = 4,type = UNBALANCED);
+	addDuplications(number = 5,minimal size of region = 3000, maximal size of region = 1200000);
+	addDeletions(number = 3,minimal size of region = 100000, maximal size of region = 3000000);
+	addDeletions(number = 3,minimal size of region = 3000, maximal size of region = 100000); 
+	addLinkingInsertions(number = 3,minimal size of region = 4000, maximal size of region = 40000,type = DIRECT);
+	addLinkingInsertions(number = 2,minimal size of region = 10000, maximal size of region = 30000,type = INVERTED);
+	addReInsertions(number = 2,minimal size of region = 3000, maximal size of region = 80000,type = DIRECT);
+	addReInsertions(number = 2,minimal size of region = 4000, maximal size of region = 60000,type = INVERTED);
+	addDuplicationsWithInversion(number = 2,minimal size of region = 3000, maximal size of region = 40000);
+	addInversions(number = 4,minimal size of region = 3000, maximal size of region = 200000);
+	addSmallInsertions(number = 5,minimal size of region = 1000, maximal size of region = 2000);
+	duplicateChromosomes(number = 1);
+	deleteChromosomes(number = 1);
+	addTranslocations(number = 1,type = UNBALANCED);
+	duplicateChromosomes(number = 1);
+
+	//add amplicons:
+	addCoAmplification(number = 4,minimal size of region = 60000, maximal size of region = 80000,type = SAMECHR, number of copies = 20);
+	addCoAmplification(number = 3,minimal size of region = 60000, maximal size of region = 80000,type = DIFFCHR, number of copies = 50);
+
+If you want to modify these parameters, please, modify the main.cpp file and recompile TGSim.
+
+Happy tumor genome simulation!
+
+Valentina Boeva
+

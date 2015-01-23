@@ -1,0 +1,4 @@
+version 7.0 - negative interval for RC modeling => solved
+version 7.1 - known contamination is taken into account during the normalization; formula for evaluation of contamination in the case of 3 and 4-ploid tumors is corrected
+version 7.2 - formula for correction of contamination in the case of 3 and 4-ploid tumors is corrected
+version 7.3 - if polynomial degree is not set - it is selected automatically between 3 and 4 by minimizing the number of iterations

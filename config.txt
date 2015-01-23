@@ -1,0 +1,6 @@
+[general]
+window=20000
+outputDir=/bioinfo/users/vboeva/workspace/PEMsimulation/READ_SIM/results
+genomeFasta=/bioinfo/users/vboeva/workspace/PEMsimulation/READ_SIM/data/1004232/hg38.fa
+genomeFasta2=/bioinfo/users/vboeva/workspace/PEMsimulation/READ_SIM/results/hg38_with.snp.indel.inversion.fa
+outputFastaName=donor.hg38.diploid.fa
