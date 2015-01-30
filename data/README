@@ -9,8 +9,8 @@ http://xfer.curie.fr/get/eGalAkbo3Lg/bam_constit.zip
 
 #COMMENT: SV-Bay only accepts files per chromosome. If you have one GEM and one BAM file for the whole genome, please use the following scripts to split them up:
 #for GEM files:
-python src/utils/sep_safe_gem.py yourBigGEMfile.gem outputDir/
-python src/utils/separately_save_sam_samtools.py yourBigBAMfile.gem outputDir/
+python src/utils/sep_save_gem.py -i yourBigGEMfile.gem  -o outputDir/
+python src/utils/separately_save_sam_samtools.py -i yourBigBAMfile.gem -o outputDir/
 
 What you can find in this folder:
 
