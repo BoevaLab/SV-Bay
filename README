@@ -24,4 +24,5 @@ python -B main_clustering.py -c config_germ.yaml
 python assemly_links1.py -c config/config.yaml -n 'cluster_files_germ/' > results
 
 
-For each step should be the same config file. Config example chech in config/config.yaml.
+
+For each step should be the same config file. Config example check in config/config.yaml.

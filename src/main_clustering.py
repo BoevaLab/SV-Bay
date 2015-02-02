@@ -21,8 +21,7 @@ config_file = open(options.config_file_name)
 config = yaml.load(config_file)
 config_file.close()
 
-# Check that all used directories exist
-utils.check_dirs_clustering(config)
+
 
 # Initialize logging
 # Levels of logging:
@@ -41,6 +40,8 @@ handler = logging.FileHandler(config['working_dir'] + config['clustering_log_fil
 formatter = logging.Formatter('%(filename)-20sline:%(lineno)-5d%(levelname)-8s [%(asctime)s]   %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+# Check that all used directories exist
+utils.check_dirs_clustering(config)
 
 # Get list of bam and sam files in sam_files_dir
 sam_files = glob.glob(config['working_dir'] + config['sam_files_dir'] + '*.sam')
