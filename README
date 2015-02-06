@@ -1,6 +1,25 @@
 All sources are stored in "src" folder.
 Folder "data" contains input data to test SV-Bay.
 
+SV-Bay is written in Python with small insertions in c++ code. To run the code on the expected time, we suggest to use Python 2.7 (difference with 2.6 is more then 3 times). The following libraries should be installed:
+ yaml
+ optparse
+ glob
+ itertools
+ logging
+ os
+ joblib
+ bisect
+ sys
+ scipy.stats
+ scipy.misc
+ math
+ matplotlib
+ pysam
+ numpy
+
+SV-Bay works both in Mac OS and Linux.
+
 SV-Bay contains 3 main steps.
 
 1)Main clustering. On this step SV-Bay calculates all the statistics about fragment length distribution and clusters abnormal fragments.
