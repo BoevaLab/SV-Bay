@@ -29,9 +29,7 @@ def is_unique(read):
 	except KeyError:
 		return 1
 
-####################################################################
-# Fragment class
-####################################################################
+# Class to represent fragment (two reads and associated metainformation)
 class Fragment(object):
 	__slots__ = ('first_read_chr', 'second_read_chr', 'begin', 'end', 'length', 'middle', 'direction', 'name','unique_flag','mapp_qul_flag')
 		
@@ -76,11 +74,13 @@ class Fragment(object):
 		self.unique_flag = unique_flag
 		self.mapp_qul_flag = mapp_qul_flag
 
+	# De-serialize from string
 	def from_string(self, str):
 		(name, first_read_chr, second_read_chr, begin, end, length, middle, direction, uf, mqf) = str.rstrip('\r\n').split(';')
 		self.from_all_args(name, first_read_chr, second_read_chr, \
 			int(begin), int(end), int(length), int(middle), direction, int(uf), int(mqf))
 
+	# Serialize to string
 	def to_string(self):
 		return self.name + ';' + self.first_read_chr + ';' + self.second_read_chr + ';' + \
 			str(self.begin) + ';' + str(self.end) + ';' + \
@@ -95,5 +95,6 @@ class Fragment(object):
 			   + 'mapp_qul_flag = '+str(self.mapp_qul_flag)+ ')'
 
 
+	# Whether fragment is abnormal
 	def is_abnormal(self, smallest_normal, biggest_normal):
 		return self.length < smallest_normal or self.length > biggest_normal

@@ -45,12 +45,9 @@ formatter = logging.Formatter('%(filename)-25sline:%(lineno)-5d%(levelname)-8s [
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-##############################################
-#Start creating models
-#############################################
-
+# Helper class representing flanking regions for cluster
 class links_flank_reg:
-	def __init__(self,name,flank_A1,flank_A2,flank_B1,flank_B2,num_abnormal, link):
+	def __init__(self, name, flank_A1, flank_A2, flank_B1, flank_B2, num_abnormal, link):
 		self.name = name
 		self.A1 = flank_A1
 		self.A2 = flank_A2
@@ -62,6 +59,7 @@ class links_flank_reg:
 	def pr(self):
 		print self.name, self.A1, self.A2, self.B1, self.B2, self.num_abnormal, self.link
 
+# Perform centromer check for flanking region
 def CentromCheck(flank_reg, list_centr, flag_beg_end):
 	reg = flank_reg[:]
 	for cent in list_centr:
@@ -78,13 +76,9 @@ def CentromCheck(flank_reg, list_centr, flag_beg_end):
 			if flank_reg[0] < cent[0] < flank_reg[1]:
 				reg[1] = cent[0]
 				break
-		#if flank_reg[0] <cent[1]<flank_reg[1]:
-		#	flank_reg[0]=cent[1]
-		#if flank_reg[0]<cent[0]<flank_reg[1]:
-		#	flank_reg[1]=cent[0]
-
 	return(reg)
 
+# Find nearest neighbours for each sublink with current elements number
 def FindNeighbors(current_sub_links, all_sub_links_chr, list_centr, chrom, chrom_len, curr_num):
 	logger.debug('Here I write the number of current sublinks and others ' + str(len(current_sub_links))+' ' + str(len(all_sub_links_chr)))
 	sl_with_max_length = max(all_sub_links_chr, key = lambda sl: sl.safe_end - sl.safe_start)
@@ -105,118 +99,67 @@ def FindNeighbors(current_sub_links, all_sub_links_chr, list_centr, chrom, chrom
 	for current_sub_link in current_sub_links:
 		reg = []
 		logger.debug('next sublink, safe_start = ' + str(current_sub_link.safe_start) + ' safe_end = ' + str(current_sub_link.safe_end))
-		#Indexes for interseption search
+		# Indexes for interseption search
 		left_ind = bisect.bisect_left(begins,current_sub_link.safe_start - max_sublink_lenght)
 		right_ind = bisect.bisect_left(begins,current_sub_link.safe_end - max_sublink_lenght)
-		#Current indexes for the current sublink
+		# Current indexes for the current sublink
 		curr_ind_beg =  bisect.bisect_left(begins,current_sub_link.safe_start)
 		curr_ind_end = bisect.bisect_left(begins,current_sub_link.safe_end)
-		#Indexes for the search without interseption
-		curr_non_iters_ind_left = bisect.bisect_left(ends,current_sub_link.safe_start)-1
+		# Indexes for the search without interseption
+		curr_non_iters_ind_left = bisect.bisect_left(ends,current_sub_link.safe_start) - 1
 		curr_non_iters_ind_right = bisect.bisect_left(begins,current_sub_link.safe_end)
 
-		logger.debug('The first link according to left_ind = '+str(candidates_sort_beg[left_ind].name))
-		#logger.debug('left_ind = '+str(left_ind))
-		#logger.debug('curr_ind_beg = '+str(curr_ind_beg))
+		logger.debug('The first link according to left_ind = ' + str(candidates_sort_beg[left_ind].name))
 		if curr_ind_beg<len(candidates_sort_beg):
-			logger.debug(candidates_sort_beg[curr_ind_beg].name+' ' +str(candidates_sort_beg[curr_ind_beg].safe_start))
-		#logger.debug('number left_ind = '+str(left_ind)+' curr_ind_beg = '+str(curr_ind_beg)+' right_ind = '+str(right_ind))
+			logger.debug(candidates_sort_beg[curr_ind_beg].name + ' ' + str(candidates_sort_beg[curr_ind_beg].safe_start))
 
 		if curr_ind_beg == 0:
 			current_sub_link.left_neighbor_end = 0 
 			current_sub_link.left_neighbor_name = 'Chromosome begin'
-			#logger.debug('So his reg_initial is'+str([current_sub_link.left_neighbor_end , current_sub_link.safe_start]))
 		else:
-			#logger.debug('curr_ind_beg!=0')
 			for other_sub_link in candidates_sort_beg[left_ind:curr_ind_beg]:
-				logger.debug(other_sub_link.name+'other_sub_link.safe_end = '+str(other_sub_link.safe_end)+'current_sub_link.safe_start='+str(current_sub_link.safe_start))
+				logger.debug(other_sub_link.name + 'other_sub_link.safe_end = ' + str(other_sub_link.safe_end) + 'current_sub_link.safe_start=' + str(current_sub_link.safe_start))
 				if current_sub_link == other_sub_link:
-					#logger.debug('In continue '+other_sub_link.name)
 					continue
 				elif current_sub_link.safe_start <= other_sub_link.safe_end: # Left intersection
-					#logger.debug('In intersection '+other_sub_link.name) 
-					#logger.debug(other_sub_link.name+' other_sub_link.safe_start '+str(other_sub_link.safe_start)+' other_sub_link.safe_end '+str(other_sub_link.safe_end))
 					current_sub_link.left_neighbor_end = current_sub_link.safe_start
 					current_sub_link.left_neighbor_name = other_sub_link.name + ' intersection'
-					#logger.debug(current_sub_link.left_neighbor_name +'  '+str(current_sub_link.left_neighbor_end))
 					break
 		if current_sub_link.left_neighbor_name == '':
-			#logger.debug('Annnnd I am here for the left neighbor!')
 			current_sub_link.left_neighbor_end =candidates_sort_end[curr_non_iters_ind_left].safe_end
 			current_sub_link.left_neighbor_name = candidates_sort_end[curr_non_iters_ind_left].name
-		#logger.debug(current_sub_link.name+ ' neighbor in the left is '+current_sub_link.left_neighbor_name+ ' left_neighbor_end = '+str(current_sub_link.left_neighbor_end))
-		#logger.debug('Start for the right neighbor')
-		if candidates_sort_end[-1]==current_sub_link:
-			logger.debug('last link!!!')
-
+		if candidates_sort_end[-1] == current_sub_link:
 			current_sub_link.right_neighbor_begin = chrom_len
 			current_sub_link.right_neighbor_name = 'Chromosome lenght'
 		else:
-			#logger.debug('not a last link!')
-			#logger.debug('right_ind = '+str(right_ind))
-			#logger.debug('min(len(candidates_sort_beg)-1,curr_ind_end) = '+str(min(len(candidates_sort_beg)-1,curr_ind_end)))
 			for other_sub_link in candidates_sort_beg[right_ind:min(len(candidates_sort_beg),curr_ind_end)]:
-				#logger.debug('look for right neighbor!')
-				#logger.debug('Check this one sub_link')
-				logger.debug(other_sub_link.name+' other_sub_link.safe_start '+str(other_sub_link.safe_start)+' other_sub_link.safe_end '+str(other_sub_link.safe_end))
+				logger.debug(other_sub_link.name + ' other_sub_link.safe_start ' + str(other_sub_link.safe_start) + ' other_sub_link.safe_end ' + str(other_sub_link.safe_end))
 				if other_sub_link == current_sub_link:
-					#logger.debug('same!')
 					continue			
-				if current_sub_link.safe_end<= other_sub_link.safe_end  : # Right intersection 
-					#logger.debug('current_sub_link.safe_end = '+str(current_sub_link.safe_end))
-					#logger.debug('other_sub_link.safe_end = '+str(other_sub_link.safe_end))
-					#logger.debug('rigth intersection with '+other_sub_link.name)
+				if current_sub_link.safe_end <= other_sub_link.safe_end  : # Right intersection 
 					current_sub_link.right_neighbor_begin = current_sub_link.safe_end
 					current_sub_link.right_neighbor_name = other_sub_link.name + ' intersection'
 					break			
-			if current_sub_link.right_neighbor_name == '':
-				#logger.debug('Annnnd I am here!')
-				#ind = bisect.bisect_left(begins,current_sub_link.safe_end)
-				#if ind == len(candidates_sort_beg):
-				#	logger.debug('lala')
-				#	ind=ind-1
-				#if current_sub_link.safe_end<candidates_sort_beg[ind].safe_start: 
-				#logger.debug('here in the right!!!! =candidates_sort_beg[min(len(current_sub_links)-1,curr_ind_end)].safe_start = '+str(candidates_sort_beg[min(len(candidates_sort_beg)-1,curr_ind_end)].safe_start))
-				#logger.debug('here in the right!!!! current_sub_link.right_neighbor_name = '+str(candidates_sort_beg[min(len(candidates_sort_beg)-1,curr_ind_end)].name))
-				
-				current_sub_link.right_neighbor_begin =candidates_sort_beg[min(len(candidates_sort_beg)-1,curr_non_iters_ind_right)].safe_start
+			if current_sub_link.right_neighbor_name == '':				
+				current_sub_link.right_neighbor_begin = candidates_sort_beg[min(len(candidates_sort_beg)-1,curr_non_iters_ind_right)].safe_start
 				current_sub_link.right_neighbor_name = candidates_sort_beg[min(len(candidates_sort_beg)-1,curr_non_iters_ind_right)].name		
-
-		reg_initial=[current_sub_link.left_neighbor_end , current_sub_link.safe_start]
+		reg_initial = [current_sub_link.left_neighbor_end , current_sub_link.safe_start]
 		
-		
-		#Start Centromeric part
-		#logger.debug('Start Centromeric part')
-		#logger.debug('reg_initial left = '+str(reg_initial))
-		if reg_initial[1]-reg_initial[0]>0:
-			#logger.debug('Should I be here?')
-			reg=CentromCheck(reg_initial,list_centr,'beg')
-			if reg[0]!=reg_initial[0]:
+		# Centromer part
+		if reg_initial[1]-reg_initial[0] > 0:
+			reg = CentromCheck(reg_initial, list_centr, 'beg')
+			if reg[0] != reg_initial[0]:
 				current_sub_link.left_neighbor_end = reg[0]
-				current_sub_link.left_neighbor_name+='_centr'
-
-
-		#logger.debug('CentromCheck = '+str(reg)+' for the link '+current_sub_link.name)
+				current_sub_link.left_neighbor_name += '_centr'
 
 		reg_initial=[current_sub_link.safe_end , current_sub_link.right_neighbor_begin]
-		#logger.debug('reg_initial rigth = '+str(reg_initial))
 		if reg_initial[1]-reg_initial[0]>0:
 			reg=CentromCheck(reg_initial,list_centr,'end')
 			if reg[1]!=reg_initial[1]:
 				current_sub_link.right_neighbor_begin = reg[1]
 				current_sub_link.right_neighbor_name+='_centr'
-		#logger.debug('CentromCheck = '+str(reg)+' for the link '+current_sub_link.name)
-		#if reg:
-		#	current_sub_link.left_neighbor_end=reg[0]
-		#	if reg[1]!=reg_initial[1]:
-		#		current_sub_link.right_neighbor_begin+=reg[1]
-		#else:
-		#	current_sub_link.left_neighbor_name+='_centr'
-		#	current_sub_link.left_neighbor_end = current_sub_link.safe_start
-		#logger.debug('After the CentromCheck')
-		#logger.debug(current_sub_link.name+ ' neighbor in the left is '+current_sub_link.left_neighbor_name+ ' left_neighbor_end = '+str(current_sub_link.left_neighbor_end))
-		#logger.debug(current_sub_link.name+ ' neighbor in the rigth is '+current_sub_link.right_neighbor_name+ ' right_neighbor_begin = '+str(current_sub_link.right_neighbor_begin))
 
+# Helper to initailise flanking regions
 def CreateFR(name, begin, end):
 	if begin == end:
 		logger.debug('Flanking region ' + name + ' empty')
@@ -225,6 +168,7 @@ def CreateFR(name, begin, end):
 		logger.debug('Flanking region ' + name + ': [' + str(begin) + ';' + str(end) + ']')
 		return [begin, end]
 
+# Initialise flanking regions for all current sublinks
 def GetFlankingRegions(current_sub_links, numb_elem):
 	link_names = [i.link.name for i in current_sub_links]
 	unique_link_names = set(link_names)
@@ -250,6 +194,7 @@ def GetFlankingRegions(current_sub_links, numb_elem):
 					break
 	return curr_fl_lnk
 
+# Process intra-chromosomal clusters for one chromosome
 def ProcessChromosome(input_data, curr_sublinks, curr_num, chrom, all_in_mem):
 	logger.info('Processing sublinks for chromosome ' + chrom)
 	# Set flanking regions to relevant sublinks
@@ -258,6 +203,7 @@ def ProcessChromosome(input_data, curr_sublinks, curr_num, chrom, all_in_mem):
 	# Run bayesian models
 	BayesianModels(input_data, links_flank_regions, chrom, chrom, config, stats)
 
+# Process translocations for chromsome pair
 def ProcessTranslocations(input_data, curr_sublinks, curr_num, chrom1, chrom2, all_in_mem):
 	logger.info('Processing translocation sublinks for chromosome pair ' + chrom1 + '-' + chrom2)
 	# Set flanking regions to relevant sublinks
@@ -277,7 +223,6 @@ chromosomes = config['chromosomes']
 logger.info('Chromosomes to process:' + str(chromosomes))
 # Load all data from files
 input_data = BayesianInputData(config, stats, chromosomes)
-# input_data.LogLoadedDataInfo()
 # If we have enough memory to store all chrom an gem lines, just load it now
 # It will speed up processing significantly
 all_in_mem = 1
@@ -286,8 +231,10 @@ if all_in_mem:
 	for chrom in chromosomes:
 		input_data.LoadChrom(config, chrom)
 
-#Procceed for all sizes (number of links) from the smallest to the biggest
-for curr_num in input_data.numb_elem[2:]:
+# Procceed for all sizes (number of links) from the smallest to the biggest
+# Skip clusters with very small number of elements (< 4) as noise
+# TODO move this to config
+for curr_num in input_data.numb_elem[4:]:
 	logger.info('====================================================')
 	logger.info('Processing sub links with number of elements ' + str(curr_num))
 	logger.info('====================================================')

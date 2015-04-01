@@ -1,9 +1,7 @@
 import sys
 
-####################################################################
-# SubLink class
-####################################################################
-
+# Class representing sublink 
+# (set of begin or end reads of fragments in one cluster)
 class SubLink:
 	def __init__(self, link, flag_beg_end, biggest_normal,initial_direction):
 		self.link = link

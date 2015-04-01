@@ -7,7 +7,9 @@ import sys
 
 logger = logging.getLogger('main_logger')
 
-def AbnRegion(link, read_length, median, biggest_normal, chrom1_line, chrom2_line, gem_line_chr1, gem_line_chr2,exp_direction):
+# Get chrom and gem parts for abnormal region
+def AbnRegion(link, read_length, median, biggest_normal, chrom1_line, chrom2_line, gem_line_chr1, gem_line_chr2):
+	exp_direction = 'rf'
 	shift = biggest_normal
 	if 	link.rightmost_begin + read_length - link.begin > shift or \
 		link.end - link.leftmost_end + read_length > shift:
@@ -43,34 +45,6 @@ def AbnRegion(link, read_length, median, biggest_normal, chrom1_line, chrom2_lin
 	abn_reg_gem1 = gem_line_chr1[abn_reg1[0] : abn_reg1[1]]
 	abn_reg_gem2 = gem_line_chr1[abn_reg2[0] : abn_reg2[1]]
 
-	# expected_bp_dist = abs(float(link.framgment_len_sum) / link.num_elements - median)
-	# # Find possible equation decisions
-	# decisions = 0
-	# for bp1 in range(bp1_begin, bp1_end):
-	# 	bp2 = bp1 + expected_bp_dist
-	# 	if bp2_begin <= bp2 <= bp2_end:
-	# 		decisions += 1
-	# if link.chr1 == link.chr2:
-	# 	f = open('bp_stats.txt', 'a')
-	# 	if bp1_size < 0 or bp2_size < 0 or bp2_mid < bp1_mid:
-	# 		f.write(str(link.name) + ' ')
-	# 	f.write(str(bp1_size) + ' ')
-	# 	f.write(str(bp2_size) + ' ')
-	# 	f.write(str(bp2_mid - bp1_mid) + ' ')
-	# 	f.write(str(expected_bp_dist) + ' ')
-	# 	f.write(str(decisions) + ' ')
-	# 	f.write('\n')
-	# 	f.close()
-	# # else:
-	# 	# print 'translocation'
-	
-	# print '==========='
-	# print link.direction_type, biggest_normal, median, read_length
-	# print link.rightmost_begin, link.begin, bp1_mid, bp1_size
-	# print link.leftmost_end, link.end, bp2_mid, bp2_size
-	# print bp2_mid - bp1_mid, expected_bp_dist
-	# print decisions
-
 	return (abn_reg_chrom1, abn_reg_chrom2, abn_reg_gem1, abn_reg_gem2)
 
 # correction is +1 or -1
@@ -95,6 +69,8 @@ def AddCorrectedModels(allele_set, obs_num, exp_num, int_sol, correction):
 		if P_prev < P and count >= 2:
 			break
 
+# Create set of models knowing 
+# observed and expected numbers and initial solution
 def CreateSetModels(obs_num, exp_num, int_sol):
 	logger.debug('Initial solution is ' + str(int_sol))
 	P = scipy.stats.distributions.poisson.logpmf(obs_num, exp_num * int(int_sol))
@@ -106,6 +82,8 @@ def CreateSetModels(obs_num, exp_num, int_sol):
 	logger.debug(allele_set)
 	return allele_set
 
+# Calculate number of normal fragments in region
+# (observed number)
 def CalcNumNormFrag(flank_reg, chrom, normal_fragments):
 	normal_fragments_for_chrom = normal_fragments[chrom]
 	# normal_fragments_for_chrom is sorted, so we may use binary search to determine first and last nf in flank_reg
@@ -114,6 +92,7 @@ def CalcNumNormFrag(flank_reg, chrom, normal_fragments):
 
 	return max(last_nf_in_flanking_region - first_nf_in_flanking_region,0)
 
+# Calculate exected and observed fragment numbers for region
 def ExpBestObs(chrom_line,reg, gem_line, read_length, median, cummulative_length_probabilities, lambda_gen_index, flag_norm, chrom, normal_fragments, config,stats):
 	c1 = reg[0] # related chromosome part begin
 	c2 = min(reg[1] + median+1, len(chrom_line)-1) # related chromosome part end
@@ -194,6 +173,7 @@ def AbnFlagCoef(flank_reg, cummulative_length_probabilities):
 					break
 	return prob_sum / (flank_reg)
 
+# Calculate expected number for region
 def ExpNumFrag(chrom_line_part, gem_line_part, read_length, median, cummulative_length_probabilities, lambda_index, abn_flag, ploidy,abn_reg_right_gem,abn_reg_right_chrom,stats):
 	#logger.debug('In ExpNumFrag, flanking region: ' + str(flank_reg[0]) + ' .. ' + str(flank_reg[1]))
 	logger.debug('Flanking region len: ' + str(len(chrom_line_part)))
@@ -201,11 +181,6 @@ def ExpNumFrag(chrom_line_part, gem_line_part, read_length, median, cummulative_
 
 	correction = []
 	flank_reg_size = len(chrom_line_part)
-	#flank_reg_size = flank_reg[1] - flank_reg[0] + 1
-	#c1 = flank_reg[0] # related chromosome part begin
-	#c2 = min(flank_reg[1] + median+1, len(chrom_line)) # related chromosome part end
-	#chrom_line_part = chrom_line[c1:c2]
-	#gem_line_part = gem_line[c1:c2]
 	correction_mapp = Correction(chrom_line_part, gem_line_part, flank_reg_size, read_length, median,abn_flag,stats,abn_reg_right_gem,abn_reg_right_chrom)
 	exp_num = 0
 	if correction_mapp<0:
@@ -225,6 +200,7 @@ def ExpNumFrag(chrom_line_part, gem_line_part, read_length, median, cummulative_
 def sortMIN(mod_prob):
 	return float(mod_prob[0])
 
+# Build model set for gamma (number of lost alleles)
 def BuildGammaSet(gamma_best, biggest_normal, num_abnormal, numb_all_abn, exp_num_G, chrom1_line,prob_zero):
 	gamma_set = []
 	if gamma_best == 0:
@@ -266,9 +242,11 @@ def BuildGammaSet(gamma_best, biggest_normal, num_abnormal, numb_all_abn, exp_nu
 	logger.debug('gamma_best = '+str(gamma_best)+' gamma_set = '+str(gamma_set))
 	return gamma_set
 
-def BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, direction_type,exp_dir):
+# Create set of models to check
+def BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, direction_type):
 	logger.debug('Time to check the BuildModelsTestSet ')
 	models_test_set = []
+	exp_dir = 'rf'
 	logger.debug('Expected and actual direction: ' + exp_dir + ' ' + direction_type)
 
 	for gamma in gamma_set:
@@ -310,6 +288,8 @@ def BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2
 
 	return models_test_set
 
+# Get probability for this model (alleles number)
+# for this flanking region
 def ProcessOneFR(fr_name, flank_reg, model, exp_numb, obs_numb, numb_all_abn, chrom_len):
 	P = 0.0
 	if not flank_reg or flank_reg[1] - flank_reg[0] <= 1000:
@@ -336,6 +316,8 @@ def ProcessOneFR(fr_name, flank_reg, model, exp_numb, obs_numb, numb_all_abn, ch
 			P = -sys.maxint
 	return P
 
+# Get probability for this model (alleles number)
+# For this cluster
 def ProcessModel(model, name_link, flag_equal, exp_num_G,  biggest_normal, chrom1_line, numb_all_abn, \
 				exp_numb_A1, exp_numb_A2, exp_numb_B1, exp_numb_B2, \
 				obs_numb_A1, obs_numb_A2, obs_numb_B1, obs_numb_B2, \
@@ -367,9 +349,12 @@ def ProcessModel(model, name_link, flag_equal, exp_num_G,  biggest_normal, chrom
 	logger.debug('P_A1*P_A2*P_B1*P_B2*P_G = ' + str(P_A1+P_A2+P_B1+P_B2+P_G))
 	return P_A1+P_A2+P_B1+P_B2+P_G
 
+# Helper to initilaise flanking region
 def FRDefaults():
 	return (0, 0, -1, [-1]) 
 
+# Initialise expected and observed number 
+# and models set for flanking region
 def InitFR( fr_name, flank_reg, chrom_line, gem_line, chrom, read_length, median, \
 			cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats):
 	(exp_numb, obs_numb, best, result_set) = FRDefaults()
@@ -386,6 +371,9 @@ def InitFR( fr_name, flank_reg, chrom_line, gem_line, chrom, read_length, median
 	logger.debug(fr_name + ' set: ' + str(result_set))
 	return (exp_numb, obs_numb, best, result_set)
 
+# Main processing
+# Build set of models, calculate every model probability
+# and choose best for each cluster
 def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stats):
 	# Get data we need from input_data
 	lambda_norm_index = input_data.lambda_norm_index
@@ -406,7 +394,7 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 	D = stats['per_chr_stats'][chrom1]['R']
 	out_put_prob = open(config['working_dir'] + config['links_probabilities_file'], 'a')
 	output_links = open(config['working_dir'] + config['valid_links_dir'] + chrom1 + '_' + chrom2 + '_valid_links_4.txt', 'a')
- 	exp_dir  = stats['per_chr_stats'][chrom1]['flag_direction']
+ 
 	logger.debug('Flanking regions in total: ' + str(len(links_flank_regions)))
 	for name_link in links_flank_regions:
 		logger.debug('********** Creating set of models for link: ' + name_link.name + '**********')
@@ -430,7 +418,7 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 		# else:
 		#   abn_reg=[break_point, break_point + biggest_normal]
 
-		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(name_link.link,read_length,median,biggest_normal,chrom_line_A,chrom_line_B,gem_line_A ,gem_line_B,exp_dir)
+		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(name_link.link,read_length,median,biggest_normal,chrom_line_A,chrom_line_B,gem_line_A ,gem_line_B)
 		exp_num_G = ExpNumFrag(abn_reg_chr, abn_reg_gem, read_length, median, cummulative_length_probabilities, lambda_abnorm_index, 1, config['ploidy'],abn_reg_right_gem,abn_reg_right_chrom, stats)
 		if exp_num_G * config['ploidy'] < 1:
 			gamma_best = 0
@@ -440,7 +428,7 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 		numb_all_links = len(input_data.sub_links) / 2
 		prob_zero = config['exp_num_sv'] / float(numb_all_links)
 		gamma_set = BuildGammaSet(gamma_best, biggest_normal, name_link.num_abnormal, numb_all_abn, exp_num_G, chrom_line_A,numb_all_links)
-		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, name_link.link.direction_type,exp_dir)
+		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, name_link.link.direction_type)
 		logger.debug('All the models are ' + str(models_test_set))
 		logger.debug('********** I finished create the set of the models **********')
 
@@ -455,7 +443,9 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 			all_models_log.append([mult,model])
 		all_models_log.sort(key=sortMIN)
 		logger.debug('Before adding all_models_log[-4:]'+str(all_models_log[-4:]))
+		logger.debug('all_models_log = '+str(all_models_log))
 		max_pr = abs(all_models_log[-1][0])
+		logger.debug('all_models_log[-1][0] = '+str(all_models_log[-1][0]))
 		all_models_log = [[i[0]+max_pr, i[1]] for i in all_models_log]
 		logger.debug('After adding all_models_log[-4:]'+str(all_models_log[-4:]))
 		prob_diff = [[math.exp(i[0]),i[1]] for i in all_models_log if i[0]>=-745]
@@ -481,6 +471,6 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 		name_link.link.A1 = str(model_prob[-1][1][0])
 		name_link.link.B2 = str(model_prob[-1][1][3])
 		if model_prob[-1][1][4]>0:
-			output_links.write(name_link.link.to_string()+'\n')
+			output_links.write(name_link.link.to_string() + '\n')
 	out_put_prob.close()
 	output_links.close()

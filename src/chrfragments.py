@@ -3,9 +3,7 @@ import os
 import pysam
 import resource
 from scipy.stats import norm
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-import numpy as np
 import bisect
 import yaml
 
@@ -14,6 +12,9 @@ import utils
 
 logger = logging.getLogger('main_logger')
 
+# Class to manage all fragments processing for single chromosome fragments:
+# Loading, stats calculation, splitting to normal/abnormal, 
+# clustering, dumping translocations.
 class ChrFragments(object):
 
     # Attributes
@@ -168,6 +169,7 @@ class ChrFragments(object):
         utils.clust(self.ff_abn, self.chr, 'ff', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
         utils.clust(self.rr_abn, self.chr, 'rr', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
     
+    # Serialize stats to temporary file
     def SerializeStatsToTmp(self):
         stats_to_serialize = dict()
         stats_to_serialize['num_all_abn'] = self.num_abnormal
@@ -185,7 +187,6 @@ class ChrFragments(object):
         stats_temp_file = open(stats_temp_fname, 'w')
         stats_temp_file.write(yaml.dump(stats_to_serialize))
         stats_temp_file.close()
-
 
     # Load .sam file into array of fragments (pysam-based)
     def __LoadSam(self, sam_file):
@@ -227,22 +228,20 @@ class ChrFragments(object):
             else:
                 key = (read.qname,read.rnext, read.pnext, read.tid, read.pos)
                 short_key = (read.rnext, read.pnext, read.tid, read.pos)
-            
-            
+
             if key not in mate_reads:
                 mate_reads[key] = read
             else:
                 # Protection against wrong duplicates processing
-                if short_key in short_keys:
+                if short_key in short_keys :
                     continue
                 else:
                     short_keys.add(short_key)
 
                 frag = fragment.Fragment()
                 frag.from_reads(read, mate_reads[key], sam_in)
-                
+
                 if frag.unique_flag or frag.mapp_qul_flag:
-        
                     self.__AppendFrag(frag)
                 else:
                     continue
@@ -273,7 +272,7 @@ class ChrFragments(object):
         logger.info('------------')
 
     # Append frag to translocations list
-    # Or to one of rr, fr, rf, ff lists
+    # or to one of rr, fr, rf, ff lists
     def __AppendFrag(self, frag):
         if frag.first_read_chr != frag.second_read_chr:
             self.translocations.append(frag)

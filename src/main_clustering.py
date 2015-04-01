@@ -21,8 +21,6 @@ config_file = open(options.config_file_name)
 config = yaml.load(config_file)
 config_file.close()
 
-
-
 # Initialize logging
 # Levels of logging:
 # DEBUG - all messages
@@ -40,6 +38,7 @@ handler = logging.FileHandler(config['working_dir'] + config['clustering_log_fil
 formatter = logging.Formatter('%(filename)-20sline:%(lineno)-5d%(levelname)-8s [%(asctime)s]   %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
 # Check that all used directories exist
 utils.check_dirs_clustering(config)
 
@@ -51,13 +50,16 @@ all_data_files = sam_files + sam_gz_files + bam_files
 # Process only files with names containing one of
 # chromosomes from config
 data_files_to_process = []
+logger.info(all_data_files)
+logger.info(config['chromosomes'])
 for data_file in all_data_files:
-	if any(chrom in data_file for chrom in config['chromosomes']):
+	if any((chrom) in data_file for chrom in config['chromosomes']):
 		data_files_to_process.append(data_file)
 
 logger.info('Processing files matching chromosomes from ' + config['working_dir'] + config['sam_files_dir'])
 logger.info('Files: ' + str(data_files_to_process))
 
+# Function to process one data file
 def Process(data_file, config):
 	# Create ChrFragments object, load fragments from sam/bam file
 	cf = chrfragments.ChrFragments(data_file, config)
@@ -78,10 +80,14 @@ def Process(data_file, config):
 	# (not use global dict to enable parallelism)
 	cf.SerializeStatsToTmp()
 
+# Process data files in several threads
+# according to configuration
 npp = 1
 if 'clustering_parallel_processes' in config:
 	npp = config['clustering_parallel_processes']
-Parallel(n_jobs = npp)(delayed(Process)(data_file, config) for data_file in data_files_to_process)
+#Parallel(n_jobs = npp)(delayed(Process)(data_file, config) for data_file in data_files_to_process)
+for data_file in data_files_to_process:
+	Process(data_file, config)
 
 # Serialize stats
 stats_to_serialize = dict()
@@ -134,6 +140,8 @@ for combination_chr in combinations_chr:
 	S = stats_to_serialize['per_chr_stats'][c1]['smallest_normal']
 	exp_dir = stats_to_serialize['per_chr_stats'][c1]['flag_direction']
 	
+	# Split translocations with each direction
+	# To cluster them separately
 	trans_ff = [f for f in all_translocations if \
 		f.first_read_chr == c1 and f.second_read_chr == c2 and f.direction == 'ff']
 	trans_fr = [f for f in all_translocations if \
@@ -151,21 +159,4 @@ for combination_chr in combinations_chr:
 		utils.clust_translocations(trans_rf, c1, c2, M, S, config, exp_dir)
 	if trans_rr:
 		utils.clust_translocations(trans_rr, c1, c2, M, S, config, exp_dir)
-
-
-##################
-##################
-# Messy / commented code
-
-# Write to file fragments with begin inside find_frag intervals
-# if len(config['find_frag']):
-# 	logger.info('Founding and saving fragments matching find_frag...')
-# 	frag_name = open(config['working_dir'] + config['results_dir'] + 'fragment_names_' + chromosome + '.txt','w')
-# 	frag_name.write('find_frag = '+str(config['find_frag']))
-# 	for frag in fragments:
-# 		for interval in config['find_frag']:
-# 			if int(interval[0])<=int(frag.begin)<=int(interval[1]) and frag.is_abnormal:
-# 				frag_name.write(frag.name+' beg = 	'+str(frag.begin)+' len = '+str(frag.length)+'\n')
-# 				break
-# 	frag_name.close()
 
