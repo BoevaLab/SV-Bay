@@ -9,11 +9,48 @@ import logging
 
 logger = logging.getLogger('main_logger')
 
-def sortFragBeg(fragment):
-	return fragment.begin
+# Class representing sublink 
+# (set of begin or end reads of fragments in one cluster)
+class SubLink:
+	__slots__ = ('is_begin', 'direction', 'name',
+				'safe_start', 'safe_end',
+				'num_elements', 'gamma_alelles',
+				'left_neighbor_end', 'right_neighbor_begin', 
+				'left_neighbor_name', 'right_neighbor_name')
 
-def sortFragMid(fragment):
-	return int(fragment.middle)
+	def __init__(self, link, is_begin, biggest_normal):
+		self.is_begin = is_begin
+		self.left_neighbor_end = 0
+		self.right_neighbor_begin = sys.maxint
+		self.left_neighbor_name = ''
+		self.right_neighbor_name = ''
+		# We have to duplicate 2 following attributes from link
+		# because they are used in FindNeighbors
+		# wher we can't access link
+		self.num_elements = link.num_elements
+		self.gamma_alelles = link.gamma_alelles
+		if self.is_begin:
+			self.safe_end = link.begin + biggest_normal
+			self.safe_start = link.rightmost_begin - biggest_normal
+			self.direction = link.direction_type[0]
+			self.name = link.name + '_1'
+		else:
+			self.safe_start = link.end - biggest_normal
+			self.safe_end = link.leftmost_end + biggest_normal
+			self.direction = link.direction_type[1]
+			self.name = link.name + '_2'
+
+class FlankingRegions:
+	__slots__ = ('A1', 'A2', 'B1', 'B2')
+
+	def __init__(self, flank_A1, flank_A2, flank_B1, flank_B2):
+		self.A1 = flank_A1
+		self.A2 = flank_A2
+		self.B1 = flank_B1
+		self.B2 = flank_B2
+
+	def pr(self):
+		print self.A1, self.A2, self.B1, self.B2
 
 # Class representing cluster
 # (array of close fragments with some pre-calculated meta information)
@@ -21,7 +58,8 @@ class Cluster(object):
 	__slots__ = ('name', 'begin', 'end', 'middle', 'length', 'num_elements', 'size_type', 'direction_type', 'chr1', 'chr2', \
 				'rightmost_begin', 'leftmost_end', 'min_fragment_length', 'max_fragment_length', \
 				'min_fragment_ends_sum' , 'max_fragment_ends_sum', 'mean_length_frag', \
-				'probability', 'framgment_len_sum', 'read_len', 'gamma_alelles', 'fragments_arr', 'A1', 'B2')
+				'probability', 'framgment_len_sum', 'read_len', 'gamma_alelles', 'fragments_arr', 'A1', 'B2',
+				'sublink1', 'sublink2', 'flanking_regions')
 
 	# Init Cluster simply from all attributes valuses
 	def __init__(self, name, begin, end, middle, length, \
@@ -234,6 +272,9 @@ class Cluster(object):
 	# Does cluster overlap with another cluster?
 	def overlaps(self, other):
 		return self.end >= other.begin and self.begin <= other.end
+
+def sortFragMid(fragment):
+	return int(fragment.middle)
 
 # Forel clustering implementation below
 ####################################################################

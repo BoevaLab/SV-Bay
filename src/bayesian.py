@@ -318,32 +318,32 @@ def ProcessOneFR(fr_name, flank_reg, model, exp_numb, obs_numb, numb_all_abn, ch
 
 # Get probability for this model (alleles number)
 # For this cluster
-def ProcessModel(model, name_link, flag_equal, exp_num_G,  biggest_normal, chrom1_line, numb_all_abn, \
+def ProcessModel(model, l, flag_equal, exp_num_G,  biggest_normal, chrom1_line, numb_all_abn, \
 				exp_numb_A1, exp_numb_A2, exp_numb_B1, exp_numb_B2, \
 				obs_numb_A1, obs_numb_A2, obs_numb_B1, obs_numb_B2, \
 				prob_zero, chrom_len_A, chrom_len_B):
-	logger.debug('**** ProcessModel ' + str(model) + ' for link ' + str(name_link.name) + '*****\n')
-	P_A1 = ProcessOneFR('A1', name_link.A1, model[0], exp_numb_A1, obs_numb_A1, numb_all_abn, chrom_len_A)
-	P_B2 = ProcessOneFR('B2', name_link.B2, model[3], exp_numb_B2, obs_numb_B2, numb_all_abn, chrom_len_B)
-	P_A2 = ProcessOneFR('A2', name_link.A2, model[1], exp_numb_A2, obs_numb_A2, numb_all_abn, chrom_len_A)
+	logger.debug('**** ProcessModel ' + str(model) + ' for link ' + str(l.name) + '*****\n')
+	P_A1 = ProcessOneFR('A1', l.flanking_regions.A1, model[0], exp_numb_A1, obs_numb_A1, numb_all_abn, chrom_len_A)
+	P_B2 = ProcessOneFR('B2', l.flanking_regions.B2, model[3], exp_numb_B2, obs_numb_B2, numb_all_abn, chrom_len_B)
+	P_A2 = ProcessOneFR('A2', l.flanking_regions.A2, model[1], exp_numb_A2, obs_numb_A2, numb_all_abn, chrom_len_A)
 	P_B1 = 0.0
 	if not flag_equal:
-		P_B1 = ProcessOneFR('B1', name_link.B1, model[2], exp_numb_B1, obs_numb_B1, numb_all_abn, chrom_len_B)
+		P_B1 = ProcessOneFR('B1', l.flanking_regions.B1, model[2], exp_numb_B1, obs_numb_B1, numb_all_abn, chrom_len_B)
 
 	if model[4] != 0:
-		logger.debug('Observed number of fragments in cluster of abnornal fragments = ' + str(name_link.num_abnormal))
+		logger.debug('Observed number of fragments in cluster of abnornal fragments = ' + str(l.num_elements))
 		logger.debug('Expected number of abnormal  fragments = ' + str(exp_num_G))
 		logger.debug('prob_zero = ' + str(prob_zero))
 		logger.debug('log(prob_zero) = ' + str(math.log(prob_zero)))
-		P_G=scipy.stats.distributions.poisson.logpmf(name_link.num_abnormal,exp_num_G*int(model[4])) + math.log(prob_zero)
+		P_G=scipy.stats.distributions.poisson.logpmf(l.num_elements,exp_num_G*int(model[4])) + math.log(prob_zero)
 	else:
 		p = (biggest_normal/float(len(chrom1_line)))
 		logger.debug('p = '+str(p))
 		logger.debug('1 - prob_zero: ' + str(1 - prob_zero) + ', log(1 - prob_zero): ' + str(math.log(1 - prob_zero)))
-		P_G = math.log(scipy.misc.comb(numb_all_abn,name_link.num_abnormal, exact=1)) + math.log(p)*name_link.num_abnormal+math.log(1-p)*(numb_all_abn-name_link.num_abnormal)+math.log(1-prob_zero)
-		logger.debug('Here we will calculate the probability to observe ' + str(name_link.num_abnormal) + ' fragments randomly')
+		P_G = math.log(scipy.misc.comb(numb_all_abn, l.num_elements, exact=1)) + math.log(p)*l.num_elements+math.log(1-p)*(numb_all_abn-l.num_elements)+math.log(1-prob_zero)
+		logger.debug('Here we will calculate the probability to observe ' + str(l.num_elements) + ' fragments randomly')
 
-	logger.debug('For G name_link.num_abnormal = ' + str(name_link.num_abnormal) + ' expected = ' + str(exp_num_G*int(model[4])) + ' region' )
+	logger.debug('For G num elements = ' + str(l.num_elements) + ' expected = ' + str(exp_num_G*int(model[4])) + ' region' )
 	logger.debug('Here is the prob for P_G=' + str(P_G))
 	logger.debug('P_A1 P_A2 P_B1 P_B1 P_G ' + str((P_A1, P_A2, P_B1, P_B2, P_G)))
 	logger.debug('P_A1*P_A2*P_B1*P_B2*P_G = ' + str(P_A1+P_A2+P_B1+P_B2+P_G))
@@ -374,7 +374,7 @@ def InitFR( fr_name, flank_reg, chrom_line, gem_line, chrom, read_length, median
 # Main processing
 # Build set of models, calculate every model probability
 # and choose best for each cluster
-def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stats):
+def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 	# Get data we need from input_data
 	lambda_norm_index = input_data.lambda_norm_index
 	lambda_abnorm_index = input_data.lambda_abnorm_index
@@ -395,40 +395,35 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 	out_put_prob = open(config['working_dir'] + config['links_probabilities_file'], 'a')
 	output_links = open(config['working_dir'] + config['valid_links_dir'] + chrom1 + '_' + chrom2 + '_valid_links_4.txt', 'a')
  
-	logger.debug('Flanking regions in total: ' + str(len(links_flank_regions)))
-	for name_link in links_flank_regions:
-		logger.debug('********** Creating set of models for link: ' + name_link.name + '**********')
-		flag_equal = name_link.B1 and name_link.A2 and name_link.B1 == name_link.A2
+	logger.debug('Links to process in total: ' + str(len(links_to_process)))
+
+	for l in links_to_process:
+		logger.debug('********** Creating set of models for link: ' + l.name + '**********')
+		flag_equal = l.flanking_regions.B1 and l.flanking_regions.A2 and l.flanking_regions.B1 == l.flanking_regions.A2
 
 		(exp_numb_A1, obs_numb_A1, alpha_1_best, alpha_1_set) = \
-			InitFR('A1', name_link.A1, chrom_line_A, gem_line_A, name_link.link.chr1, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
+			InitFR('A1', l.flanking_regions.A1, chrom_line_A, gem_line_A, l.chr1, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
 		(exp_numb_A2, obs_numb_A2, alpha_2_best, alpha_2_set) = \
-			InitFR('A2', name_link.A2, chrom_line_A, gem_line_A, name_link.link.chr1, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
+			InitFR('A2', l.flanking_regions.A2, chrom_line_A, gem_line_A, l.chr1, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
 		(exp_numb_B2, obs_numb_B2, betta_2_best, betta_2_set) = \
-			InitFR('B2', name_link.B2, chrom_line_B, gem_line_B, name_link.link.chr2, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
+			InitFR('B2', l.flanking_regions.B2, chrom_line_B, gem_line_B, l.chr2, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
 		if flag_equal:
 			(exp_numb_B1, obs_numb_B1, betta_1_best, betta_1_set) = FRDefaults()
 		else:
 			(exp_numb_B1, obs_numb_B1, betta_1_best, betta_1_set) = \
-				InitFR('B1', name_link.B1, chrom_line_B, gem_line_B, name_link.link.chr2, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
+				InitFR('B1', l.flanking_regions.B1, chrom_line_B, gem_line_B, l.chr2, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
 
-		# break_point = BreakPoint(name_link.link, read_length, median)
-		# if name_link.link.direction_type == 'rr' or name_link.link.direction_type == 'rf':
-		#   abn_reg=[break_point - biggest_normal,break_point]
-		# else:
-		#   abn_reg=[break_point, break_point + biggest_normal]
-
-		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(name_link.link,read_length,median,biggest_normal,chrom_line_A,chrom_line_B,gem_line_A ,gem_line_B)
+		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(l,read_length,median,biggest_normal,chrom_line_A,chrom_line_B,gem_line_A ,gem_line_B)
 		exp_num_G = ExpNumFrag(abn_reg_chr, abn_reg_gem, read_length, median, cummulative_length_probabilities, lambda_abnorm_index, 1, config['ploidy'],abn_reg_right_gem,abn_reg_right_chrom, stats)
 		if exp_num_G * config['ploidy'] < 1:
 			gamma_best = 0
 		else:
-			gamma_best = int(round(name_link.num_abnormal/exp_num_G))
-		logger.debug('exp_num_G = '+str(exp_num_G)+ ' obs_numb = '+str(name_link.num_abnormal)+' gamma_best = '+ str(gamma_best))
-		numb_all_links = len(input_data.sub_links) / 2
+			gamma_best = int(round(l.num_elements / exp_num_G))
+		logger.debug('exp_num_G = '+str(exp_num_G)+ ' obs_numb = '+str(l.num_elements)+' gamma_best = '+ str(gamma_best))
+		numb_all_links = len(input_data.links)
 		prob_zero = config['exp_num_sv'] / float(numb_all_links)
-		gamma_set = BuildGammaSet(gamma_best, biggest_normal, name_link.num_abnormal, numb_all_abn, exp_num_G, chrom_line_A,numb_all_links)
-		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, name_link.link.direction_type)
+		gamma_set = BuildGammaSet(gamma_best, biggest_normal, l.num_elements, numb_all_abn, exp_num_G, chrom_line_A,numb_all_links)
+		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, l.direction_type)
 		logger.debug('All the models are ' + str(models_test_set))
 		logger.debug('********** I finished create the set of the models **********')
 
@@ -437,7 +432,7 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 		sum_prob = 0
 		flag_log = 0
 		for model in models_test_set:
-			mult = ProcessModel(model, name_link, flag_equal, exp_num_G, biggest_normal, chrom_line_A, numb_all_abn, \
+			mult = ProcessModel(model, l, flag_equal, exp_num_G, biggest_normal, chrom_line_A, numb_all_abn, \
 							exp_numb_A1, exp_numb_A2, exp_numb_B1, exp_numb_B2, \
 							obs_numb_A1, obs_numb_A2, obs_numb_B1, obs_numb_B2,prob_zero,len(chrom_line_A),len(chrom_line_B))
 			all_models_log.append([mult,model])
@@ -459,18 +454,18 @@ def BayesianModels(input_data, links_flank_regions, chrom1, chrom2, config, stat
 		model_prob.sort(key=sortMIN)
 		logger.info('Elements in models_test_set: ' + str(len(models_test_set)))
 		logger.info('Initial solution ' + str([alpha_1_best,alpha_2_best,betta_1_best,betta_2_best,gamma_best]))
-		logger.info('Best model for cluster ' + name_link.name + ' with ' + str(name_link.num_abnormal) + ' abnormal fragmetns is ' + str(model_prob[-1]))
-		out_put_prob.write('\nInitial solution for cluster'+str(name_link.name)+ '------ ['+ str(alpha_1_best)+';'+str(alpha_2_best)+';'+str(betta_1_best)+';'+str(betta_2_best)+';'+str(gamma_best)+']')
+		logger.info('Best model for cluster ' + l.name + ' with ' + str(l.num_elements) + ' abnormal fragmetns is ' + str(model_prob[-1]))
+		out_put_prob.write('\nInitial solution for cluster'+str(l.name)+ '------ ['+ str(alpha_1_best)+';'+str(alpha_2_best)+';'+str(betta_1_best)+';'+str(betta_2_best)+';'+str(gamma_best)+']')
 		out_put_prob.write('\nModels --- '+str(model_prob))
-		out_put_prob.write('\nBest model for cluster ' +str(name_link.name)+' with '+str(name_link.num_abnormal)+' abnormal fragmetns is '+ str(model_prob[-1])+ 'with probability '+ str(model_prob[-1][0]))
-		name_link.link.probability =0.0
+		out_put_prob.write('\nBest model for cluster ' +str(l.name)+' with '+str(l.num_elements)+' abnormal fragmetns is '+ str(model_prob[-1])+ 'with probability '+ str(model_prob[-1][0]))
+		l.probability =0.0
 		for mod in model_prob:
 			if mod[1][4]!=0:
-				name_link.link.probability+=mod[0]
-		name_link.link.gamma_alelles=model_prob[-1][1][4]
-		name_link.link.A1 = str(model_prob[-1][1][0])
-		name_link.link.B2 = str(model_prob[-1][1][3])
+				l.probability+=mod[0]
+		l.gamma_alelles=model_prob[-1][1][4]
+		l.A1 = str(model_prob[-1][1][0])
+		l.B2 = str(model_prob[-1][1][3])
 		if model_prob[-1][1][4]>0:
-			output_links.write(name_link.link.to_string() + '\n')
+			output_links.write(l.to_string() + '\n')
 	out_put_prob.close()
 	output_links.close()

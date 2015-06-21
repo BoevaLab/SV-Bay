@@ -45,20 +45,6 @@ formatter = logging.Formatter('%(filename)-25sline:%(lineno)-5d%(levelname)-8s [
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# Helper class representing flanking regions for cluster
-class links_flank_reg:
-	def __init__(self, name, flank_A1, flank_A2, flank_B1, flank_B2, num_abnormal, link):
-		self.name = name
-		self.A1 = flank_A1
-		self.A2 = flank_A2
-		self.B1 = flank_B1
-		self.B2 = flank_B2
-		self.num_abnormal = num_abnormal
-		self.link = link
-
-	def pr(self):
-		print self.name, self.A1, self.A2, self.B1, self.B2, self.num_abnormal, self.link
-
 # Perform centromer check for flanking region
 def CentromCheck(flank_reg, list_centr, flag_beg_end):
 	reg = flank_reg[:]
@@ -86,15 +72,15 @@ def FindNeighbors(current_sub_links, all_sub_links_chr, list_centr, chrom, chrom
 	logger.debug('max_sublink_lenght = ' + str(max_sublink_lenght))
 
 	# All candidates
-	candidates = [sublink for sublink in all_sub_links_chr if sublink.link.num_elements >= curr_num or sublink.link.gamma_alelles>=1]
+	candidates = [sublink for sublink in all_sub_links_chr if sublink.num_elements >= curr_num or sublink.gamma_alelles >= 1]
 	# Candidates sorted by safe_start and safe starts separately (for bisect)
-	candidates_sort_beg = sorted(candidates, key = lambda link: link.safe_start)
+	candidates_sort_beg = sorted(candidates, key = lambda sl: sl.safe_start)
 	begins = [sub_link.safe_start for sub_link in candidates_sort_beg]
 	# Candidates sorted by safe_end and safe ends separately (for bisect)
-	candidates_sort_end = sorted(candidates, key = lambda link: link.safe_end)
+	candidates_sort_end = sorted(candidates, key = lambda sl: sl.safe_end)
 	ends = [sub_link.safe_end for sub_link in candidates_sort_end]
 
-	current_sub_links.sort(key = lambda link: link.safe_start)	
+	current_sub_links.sort(key = lambda sl: sl.safe_start)	
 	
 	for current_sub_link in current_sub_links:
 		reg = []
@@ -169,50 +155,36 @@ def CreateFR(name, begin, end):
 		return [begin, end]
 
 # Initialise flanking regions for all current sublinks
-def GetFlankingRegions(current_sub_links, numb_elem):
-	link_names = [i.link.name for i in current_sub_links]
-	unique_link_names = set(link_names)
-
-	curr_fl_lnk = []
-	for name in unique_link_names:
-		logger.debug('Link: ' + name)
-		curr_fl_lnk.append(links_flank_reg(name,[],[],[],[],numb_elem,''))
-		for csl in current_sub_links:
-			if csl.link.name==name:
-				#curr_fl_lnk[-1].position=[csl.link.rightmost_begin,csl.link.leftmost_end]
-				curr_fl_lnk[-1].link = csl.link
-				logger.debug('Sublink ' + csl.name + ' [ ' + str(csl.safe_start) + '; ' + str(csl.safe_end) + ']')
-				logger.debug('Neighbor in the left: ' + csl.left_neighbor_name + ' ' + str(csl.left_neighbor_end) + ', ' + \
-							'neighbor in the rigth: ' + csl.right_neighbor_name + ' ' + str(csl.right_neighbor_begin))
-
-				if csl.name[-2:]=='_1':
-					curr_fl_lnk[-1].A1 = CreateFR('A1', csl.left_neighbor_end, csl.safe_start)
-					curr_fl_lnk[-1].A2 = CreateFR('A2', csl.safe_end, csl.right_neighbor_begin)
-				else:
-					curr_fl_lnk[-1].B1 = CreateFR('B1', csl.left_neighbor_end, csl.safe_start)
-					curr_fl_lnk[-1].B2 = CreateFR('B1', csl.safe_end, csl.right_neighbor_begin)
-					break
-	return curr_fl_lnk
+def SetFlankingRegions(current_links):
+	for l in current_links:
+		logger.debug('Setting flanking regions for link ' + l.name)
+		l.flanking_regions = FlankingRegions([], [], [], [])
+		l.flanking_regions.A1 = CreateFR('A1', l.sublink1.left_neighbor_end, l.sublink1.safe_start)
+		l.flanking_regions.A2 = CreateFR('A2', l.sublink1.safe_end, l.sublink1.right_neighbor_begin)
+		l.flanking_regions.B1 = CreateFR('B1', l.sublink2.left_neighbor_end, l.sublink2.safe_start)
+		l.flanking_regions.B2 = CreateFR('B2', l.sublink2.safe_end, l.sublink2.right_neighbor_begin)
 
 # Process intra-chromosomal clusters for one chromosome
-def ProcessChromosome(input_data, curr_sublinks, curr_num, chrom, all_in_mem):
-	logger.info('Processing sublinks for chromosome ' + chrom)
-	# Set flanking regions to relevant sublinks
-	chr_sublinks = [sl for sl in curr_sublinks if sl.link.chr1 == chrom and sl.link.chr2 == chrom]
-	links_flank_regions = GetFlankingRegions(chr_sublinks, curr_num)
+def ProcessChromosome(input_data, curr_num, chrom, all_in_mem):
+	logger.info('Processing links for chromosome ' + chrom)
+	# Set flanking regions to relevant links
+	links_to_process = [l for l in input_data.links if \
+		l.chr1 == chrom and l.chr2 == chrom and l.num_elements == curr_num]
+	SetFlankingRegions(links_to_process)
 	# Run bayesian models
-	BayesianModels(input_data, links_flank_regions, chrom, chrom, config, stats)
+	BayesianModels(input_data, links_to_process, chrom, chrom, config, stats)
 
 # Process translocations for chromsome pair
-def ProcessTranslocations(input_data, curr_sublinks, curr_num, chrom1, chrom2, all_in_mem):
-	logger.info('Processing translocation sublinks for chromosome pair ' + chrom1 + '-' + chrom2)
-	# Set flanking regions to relevant sublinks
-	tr_sublinks = [sl for sl in curr_sublinks if sl.link.chr1 == chrom1 and sl.link.chr2 == chrom2]
-	links_flank_regions_tr = GetFlankingRegions(tr_sublinks,curr_num)
+def ProcessTranslocations(input_data, curr_num, chrom1, chrom2, all_in_mem):
+	logger.info('Processing translocation links for chromosome pair ' + chrom1 + '-' + chrom2)
+	# Set flanking regions to relevant links
+	tr_links_to_process = [l for l in input_data.links if \
+		l.chr1 == chrom1 and l.chr2 == chrom2 and l.num_elements == curr_num]
+	SetFlankingRegions(tr_links_to_process)
 	# Neighbors search was already performed when processing sepaparate chromosomes
 	# So it's not needed
 	# Run bayesian models
-	BayesianModels(input_data, links_flank_regions_tr, chrom1, chrom2, config, stats)
+	BayesianModels(input_data, tr_links_to_process, chrom1, chrom2, config, stats)
 
 ##########################################################################################
 # Main code starts here
@@ -238,9 +210,6 @@ for curr_num in input_data.numb_elem[4:]:
 	logger.info('====================================================')
 	logger.info('Processing sub links with number of elements ' + str(curr_num))
 	logger.info('====================================================')
-
-	curr_sublinks = [sl for sl in input_data.sub_links if sl.num_elements == curr_num]
-	logger.info('Number of sub links with ' + str(curr_num) + ' elements: ' + str(len(curr_sublinks)))
 	
 	# Find neifghbors for all sublinks for each chromosome
 	# And process intra-chr sublimks
@@ -249,20 +218,37 @@ for curr_num in input_data.numb_elem[4:]:
 		# Load chromosome fa and gem in input data
 		if not all_in_mem:
 			input_data.LoadChrom(config, chrom)
+
 		# Find neighbors and process
-		all_sublinks_chr = [sl for sl in input_data.sub_links if sl.chrom == chrom]
-		curr_sublinks_chr = [sl for sl in all_sublinks_chr if sl.num_elements == curr_num]
+		# First fill in arrays of all sublinks for this chr and 
+		# and sublinks for this chr with current elements number
+		all_sublinks_chr = []
+		curr_sublinks_chr = []
+		for l in input_data.links:
+			if l.chr1 == chrom:
+				all_sublinks_chr.append(l.sublink1)
+				if l.num_elements == curr_num:
+					curr_sublinks_chr.append(l.sublink1)
+			if l.chr2 == chrom:
+				all_sublinks_chr.append(l.sublink2)
+				if l.num_elements == curr_num:
+					curr_sublinks_chr.append(l.sublink2)
+
+		logger.info('Number of sub links for chr ' + chrom + ': ' + str(len(all_sublinks_chr)))
+		logger.info('Number of sub links for chr ' + chrom + ' with ' + str(curr_num) + \
+			' elements: ' + str(len(curr_sublinks_chr)))
+
 		FindNeighbors(curr_sublinks_chr, all_sublinks_chr, input_data.chr_centrom_dict[chrom], \
 			chrom, len(input_data.chr_line_dict[chrom]), curr_num)
-		ProcessChromosome(input_data, curr_sublinks, curr_num, chrom, all_in_mem)
+		ProcessChromosome(input_data, curr_num, chrom, all_in_mem)
 		# Unload fa and gem 
 		if not all_in_mem:
 			input_data.UnloadChrom(chrom)
 	logger.info('Finished neighbors and intra-chr sublinks processing')
 		
 	logger.info('Proceessing tranlocation sublinks...')
-	chrom_pairs = [(sl.link.chr1, sl.link.chr2) for sl in curr_sublinks if \
-		sl.link.chr1 != sl.link.chr2 and sl.link.chr1 in chromosomes and sl.link.chr2 in chromosomes]
+	chrom_pairs = [(l.chr1, l.chr2) for l in input_data.links if \
+		l.chr1 != l.chr2 and l.chr1 in chromosomes and l.chr2 in chromosomes]
 	uniq_chrom_pairs = set(chrom_pairs)
 	for (chrom1, chrom2) in uniq_chrom_pairs:
 		# Load chromosomes fa and gem in input data
@@ -270,7 +256,7 @@ for curr_num in input_data.numb_elem[4:]:
 			input_data.LoadChrom(config, chrom1)
 			input_data.LoadChrom(config, chrom2)
 		# Process translocations
-		ProcessTranslocations(input_data, curr_sublinks, curr_num, chrom1, chrom2, all_in_mem)
+		ProcessTranslocations(input_data, curr_num, chrom1, chrom2, all_in_mem)
 		# Unload fa and gem
 		if not all_in_mem:
 			input_data.UnloadChrom(chrom1)

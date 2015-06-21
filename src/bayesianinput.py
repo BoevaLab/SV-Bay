@@ -1,7 +1,6 @@
 import glob
 import logging
 from cluster import *
-from sublink import *
 from numpy import arange,array,ones,linalg
 from pylab import *
 from operator import is_not
@@ -40,8 +39,8 @@ class BayesianInputData:
 	length_probabilities = []
 	# List of pairs (fragment length, probability of length <= than this)
 	cummulative_length_probabilities = []
-	# All sub links for all chromosomes
-	sub_links = []
+	# All links for all chromosomes
+	links = []
 	# Sorted list of element numbers observed in clusters
 	numb_elem = []
 
@@ -127,7 +126,7 @@ class BayesianInputData:
 
 	# Load clusters, construct sublinks
 	def __LoadLinksAndConstructSubLinks(self, config, stats):
-		links = []
+		self.links = []
 		file_names = glob.glob(config['working_dir'] + config['clusters_files_dir'] + '*.txt')
 		# Process only files with names containing one of
 		# chromosomes from config
@@ -140,17 +139,16 @@ class BayesianInputData:
 			logger.debug(fname)
 			f = open(fname)
 			for line in f:
-				links.append(Cluster.from_string(line))
-				if links[-1].num_elements not in self.numb_elem:
-					self.numb_elem.append(links[-1].num_elements)
+				self.links.append(Cluster.from_string(line))
+				if self.links[-1].num_elements not in self.numb_elem:
+					self.numb_elem.append(self.links[-1].num_elements)
 			f.close()
 		# Sort numb elem and remove smallest numbers
 		self.numb_elem = sorted(self.numb_elem)
 		biggest_normal = stats['per_chr_stats'][config['chromosomes'][0]]['biggest_normal']
-		initial_direction = stats['per_chr_stats'][config['chromosomes'][0]]['flag_direction'] 
-		for link in links:
-			self.sub_links.append(SubLink(link, 'beg', biggest_normal,initial_direction))
-			self.sub_links.append(SubLink(link, 'end', biggest_normal,initial_direction))
+		for link in self.links:
+			link.sublink1 = SubLink(link, True, biggest_normal)
+			link.sublink2 = SubLink(link, False, biggest_normal)
 
 	# Load lenght probabilities
 	def __LoadLengthProbabilities(self, config, stats):
