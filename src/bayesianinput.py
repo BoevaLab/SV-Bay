@@ -96,6 +96,7 @@ class BayesianInputData:
 
 	# Load normal fragments
 	def __LoadNormalFragments(self, config):
+		logger.info('Loading normal fragments...')
 		for chrom in self.chromosomes:
 			chr_nf_list = []
 			chr_nf_uniq =[]
@@ -112,6 +113,7 @@ class BayesianInputData:
 			f.close()
 			self.chr_normal_fragments_dict[chrom] = chr_nf_list
 			self.chr_normal_fragments_dict_unique[chrom] = chr_nf_uniq
+		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 	# Load centromere
 	def __LoadCentrom(self, config):
@@ -126,6 +128,7 @@ class BayesianInputData:
 
 	# Load clusters, construct sublinks
 	def __LoadLinksAndConstructSubLinks(self, config, stats):
+		logger.info('Loading links...')
 		self.links = []
 		file_names = glob.glob(config['working_dir'] + config['clusters_files_dir'] + '*.txt')
 		# Process only files with names containing one of
@@ -143,12 +146,15 @@ class BayesianInputData:
 				if self.links[-1].num_elements not in self.numb_elem:
 					self.numb_elem.append(self.links[-1].num_elements)
 			f.close()
+		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 		# Sort numb elem and remove smallest numbers
+		logger.info('Constructing sublinks...')
 		self.numb_elem = sorted(self.numb_elem)
 		biggest_normal = stats['per_chr_stats'][config['chromosomes'][0]]['biggest_normal']
 		for link in self.links:
 			link.sublink1 = SubLink(link, True, biggest_normal)
 			link.sublink2 = SubLink(link, False, biggest_normal)
+		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 	# Load lenght probabilities
 	def __LoadLengthProbabilities(self, config, stats):

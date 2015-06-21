@@ -245,8 +245,7 @@ class ChrFragments(object):
         logger.info('Unmapped pairs: ' + str(num_unmapped_pairs))
         logger.info('Repeats : ' + str(repeats))
         logger.info('Bad quality fragments : ' + str(num_bad_quality))
-        logger.info('Memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024) + \
-            ' (it is Kb for OSX and Mb for Linux)')
+        logger.info('Memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
         logger.info('------------')
 
     def __ProcessFragForStats(self, frag):
