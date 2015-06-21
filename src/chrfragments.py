@@ -30,45 +30,48 @@ class ChrFragments(object):
 
     def __init__(self, sam_file, config):
         self.config = config
-        self.translocations = []
+        self.sam_file = sam_file
         self.ff = []
         self.fr = []
         self.rf = []
         self.rr = []
-        self.__LoadSam(sam_file)
+        self.ff_abn = []
+        self.fr_abn = []
+        self.rf_abn = []
+        self.rr_abn = []
+        self.translocations = []
+
+    # Collect different stats for this chr
+    def CollectStats(self):
+        logger.info('Loading first million reads to calculate stats...')
+        # Load sam partly to calculte stats
+        # 1m fragments should be generaly enough
+        self.__LoadSam(self.sam_file, 1000000, self.__ProcessFragForStats)
+
         # Chromosome name (same for all fragments except for translocation, pick from one)
         if len(self.fr) > len(self.rf):
             self.chr = self.fr[0].first_read_chr
         else:
             self.chr = self.rf[0].first_read_chr
         self.calc_hist = False
-        if self.chr == config['chromosomes'][0]:
+        if self.chr == self.config['chromosomes'][0]:
             self.calc_hist = True
 
-    def SaveTranslocationsToTmp(self):
-        trans_temp_fname = '/tmp/trans_' + self.chr + '.tmp'
-        trans_temp_file = open(trans_temp_fname, 'w')
-        for tr in self.translocations:
-            trans_temp_file.write(tr.to_string())
-            trans_temp_file.write('\n')
-        trans_temp_file.close()
-
-    # Collect different stats for this chr
-    def CollectStats(self):
+        logger.info('Calculating stats...')
         # Build confidence interval. Take fragment lengths for most popular type (it may be fr or rf)
+        self.fr.sort(key = lambda frag: frag.middle)
+        self.rf.sort(key = lambda frag: frag.middle)
         if len(self.fr) > len(self.rf):
             fragment_lengths = [frag.length for frag in self.fr]
-            self.flag_direction='fr'
+            self.flag_direction = 'fr'
         else:
             fragment_lengths = [frag.length for frag in self.rf]
-            self.flag_direction='rf'
+            self.flag_direction = 'rf'
         
         fragment_lengths = sorted(fragment_lengths)
         normal_lengths = fragment_lengths[0:bisect.bisect_left(fragment_lengths,10000)]
         h = int(round(self.config['alpha'] * len(fragment_lengths))) # Number of segments that should be excluded from each side
         normal_lengths = normal_lengths[int(round(h))+1:-int(round(h)) -1]
-        #normal_lengths =[i for i in fragment_lengths if fragment_lengths[0]<=i<= fragment_lengths[-1]]
-        #normal_lengths =[i for i in fragment_lengths if 900<=i<= 4000] 
         abnormal_lengths = fragment_lengths[0:int(round(h))+1] + fragment_lengths[int(round(h)) -1:-1]
         self.smallest_normal = normal_lengths[0]
         self.biggest_normal = normal_lengths[-1]
@@ -119,56 +122,25 @@ class ChrFragments(object):
             logger.info('p: ' + str(self.p))
         logger.info('------------')
 
-    # Split normal and abnormal fragments
-    def SplitNormAbnorm(self):
-        logger.info('Splitting normal and abnormal fragments...')
-
-        self.ff_abn = []
-        self.fr_abn = []
-        self.rf_abn = []
-        self.rr_abn = []        
-        self.normal_fragments = []
-
-        self.rr_abn = [frag for frag in self.rr if frag.unique_flag]
-        self.ff_abn = [frag for frag in self.ff if frag.unique_flag]
-        if self.flag_direction == 'fr':
-            self.rf_abn = [frag for frag in self.rf if frag.unique_flag]
-            self.fr_abn = [frag for frag in self.fr if frag.unique_flag and frag.is_abnormal(self.smallest_normal, self.biggest_normal)]
-            self.normal_fragments = [frag for frag in self.fr if not frag.is_abnormal(self.smallest_normal, self.biggest_normal)]
-        else:
-            self.fr_abn = [frag for frag in self.fr if frag.unique_flag and frag.length >= 1000]
-            self.rf_abn = [frag for frag in self.rf if frag.unique_flag and frag.is_abnormal(self.smallest_normal, self.biggest_normal)]
-            self.normal_fragments = [frag for frag in self.rf if not frag.is_abnormal(self.smallest_normal, self.biggest_normal)]
-
-        logger.info('Done.')
+    def MainLoad(self):
+        self.num_normal = 0
+        self.fr_norm = open(self.config['working_dir'] + self.config['normal_fragments_dir'] + 'normal_fragments_' + self.chr + '.txt', 'w')
+        self.fr_norm.write( '| chr | begin | unique_flag | mapp_qul_flag | name | \n')
+        self.__LoadSam(self.sam_file, 0, self.__ProcessFragMain)
+        self.ff_abn.sort(key = lambda frag: frag.middle)
+        self.rr_abn.sort(key = lambda frag: frag.middle)
+        self.fr_abn.sort(key = lambda frag: frag.middle)
+        self.rf_abn.sort(key = lambda frag: frag.middle)
+        self.fr_norm.close()
         self.num_abnormal = len(self.fr_abn) + len(self.rf_abn) + len(self.rr_abn) + len(self.ff_abn)
+        logger.info('Normal fragments: ' + str(self.num_normal))
         logger.info('Abnormal fragments: ' + str(self.num_abnormal))
-        logger.info('Normal fragments: ' + str(len(self.normal_fragments)))
         logger.info('Lengths of abnormal arrays: ' + str(len(self.fr_abn)) + ' ' + 
                                                      str(len(self.ff_abn)) + ' ' + 
                                                      str(len(self.rr_abn)) + ' ' + 
                                                      str(len(self.rf_abn)))
+        logger.info('Translocations: ' + str(len(self.translocations)))
 
-    # Write normal fragments to a file
-    def WriteNormal(self):
-        logger.info('Writing normal fragments to file...')
-        fr_norm = open(self.config['working_dir'] + self.config['normal_fragments_dir'] + 'normal_fragments_' + self.chr + '.txt', 'w')
-        fr_norm.write( '| chr | begin | unique_flag | mapp_qul_flag | name | \n')
-        for frag in self.normal_fragments:
-            fr_norm.write(frag.first_read_chr + ' ' + \
-                            str(frag.begin) + ' ' + \
-                            str(frag.unique_flag) + ' ' + \
-                            str(frag.mapp_qul_flag) + ' ' + 
-                            frag.name + '\n')
-        fr_norm.close()
-
-    # Cluster fragments with different direction types
-    def PerformClustering(self):
-        utils.clust(self.fr_abn, self.chr, 'fr', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
-        utils.clust(self.rf_abn, self.chr, 'rf', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
-        utils.clust(self.ff_abn, self.chr, 'ff', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
-        utils.clust(self.rr_abn, self.chr, 'rr', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
-    
     # Serialize stats to temporary file
     def SerializeStatsToTmp(self):
         stats_to_serialize = dict()
@@ -188,8 +160,23 @@ class ChrFragments(object):
         stats_temp_file.write(yaml.dump(stats_to_serialize))
         stats_temp_file.close()
 
+    def SaveTranslocationsToTmp(self):
+        trans_temp_fname = '/tmp/trans_' + self.chr + '.tmp'
+        trans_temp_file = open(trans_temp_fname, 'w')
+        for tr in self.translocations:
+            trans_temp_file.write(tr.to_string())
+            trans_temp_file.write('\n')
+        trans_temp_file.close()
+
+    # Cluster fragments with different direction types
+    def PerformClustering(self):
+        utils.clust(self.fr_abn, self.chr, 'fr', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
+        utils.clust(self.rf_abn, self.chr, 'rf', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
+        utils.clust(self.ff_abn, self.chr, 'ff', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
+        utils.clust(self.rr_abn, self.chr, 'rr', self.biggest_normal, self.smallest_normal, self.config, self.flag_direction)
+
     # Load .sam file into array of fragments (pysam-based)
-    def __LoadSam(self, sam_file):
+    def __LoadSam(self, sam_file, max_reads, frag_callback):
         num_unmapped_pairs = 0
         num_bad_quality = 0
         reads_processed = 0
@@ -213,6 +200,10 @@ class ChrFragments(object):
             reads_processed += 1
             if reads_processed % 1000000 == 0:
                 logger.info('Reads processed: ' + str(reads_processed))
+
+            if max_reads != 0 and reads_processed > max_reads:
+                logger.info('Loading sam file terminated, beacuse max reads number reached: ' + str(max_reads))
+                return
 
             if read.is_unmapped or read.mate_is_unmapped:
                 num_unmapped_pairs += 1
@@ -242,47 +233,51 @@ class ChrFragments(object):
                 frag.from_reads(read, mate_reads[key], sam_in)
 
                 if frag.unique_flag or frag.mapp_qul_flag:
-                    self.__AppendFrag(frag)
+                    frag_callback(frag)
                 else:
                     continue
 
                 del mate_reads[key]
 
         sam_in.close()
-        logger.info('Finished loading ' + sam_file + ', sorting...')
-        self.ff.sort(key = lambda frag: frag.middle)
-        self.rr.sort(key = lambda frag: frag.middle)
-        self.fr.sort(key = lambda frag: frag.middle)
-        self.rf.sort(key = lambda frag: frag.middle)
-        logger.info('Done.')
-        # Some stats for loaded data
-        frags_totally = len(self.rr) + len(self.fr) + len(self.rf) + len(self.ff) + len(self.translocations)
+        logger.info('Finished loading ' + sam_file + '.')
         logger.info('In mate_reads dictionary: ' + str(len(mate_reads)))
         logger.info('Unmapped pairs: ' + str(num_unmapped_pairs))
         logger.info('Repeats : ' + str(repeats))
         logger.info('Bad quality fragments : ' + str(num_bad_quality))
-        logger.info('Translocations: ' + str(len(self.translocations)))
-        logger.info('Pair ended (fr) fragments: ' + str(len(self.fr)))
-        logger.info('Mate ended (rf) fragments: ' + str(len(self.rf)))
-        logger.info('Double forward fragments: ' + str(len(self.ff)))
-        logger.info('Double reverse fragments: ' + str(len(self.rr)))
-        logger.info('Fragments totally: ' + str(frags_totally))
         logger.info('Memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024) + \
             ' (it is Kb for OSX and Mb for Linux)')
         logger.info('------------')
 
-    # Append frag to translocations list
-    # or to one of rr, fr, rf, ff lists
-    def __AppendFrag(self, frag):
+    def __ProcessFragForStats(self, frag):
+        # We are not interested in rr, ff and translocations -
+        # it's irrelevant for calculating stats
+        if frag.direction == 'fr':
+            self.fr.append(frag)        
+        elif frag.direction == 'rf':
+            self.rf.append(frag)
+
+    def __ProcessFragMain(self, frag):
         if frag.first_read_chr != frag.second_read_chr:
             self.translocations.append(frag)
         elif frag.direction == 'rr':
-            self.rr.append(frag)
-        elif frag.direction == 'fr':
-            self.fr.append(frag)
-        elif frag.direction == 'rf':
-            self.rf.append(frag)
+            if frag.unique_flag:
+                self.rr_abn.append(frag)
         elif frag.direction == 'ff':
-            self.ff.append(frag)
-        else:
-            logger.error('Can\'t determine list to append fragment')
+            if frag.unique_flag:
+                self.ff_abn.append(frag)
+        elif frag.direction == 'rf' and (self.flag_direction == 'fr' or \
+                                        frag.is_abnormal(self.smallest_normal, self.biggest_normal)):
+            if frag.unique_flag:
+                self.rf_abn.append(frag)
+        elif frag.direction == 'fr' and (self.flag_direction == 'rf' or \
+                                        frag.is_abnormal(self.smallest_normal, self.biggest_normal)):
+            if frag.unique_flag and (self.flag_direction == 'fr' or frag.length >= 1000):
+                self.fr_abn.append(frag)
+        else: # Normal fragment
+            self.num_normal += 1
+            self.fr_norm.write(frag.first_read_chr + ' ' + \
+                    str(frag.begin) + ' ' + \
+                    str(frag.unique_flag) + ' ' + \
+                    str(frag.mapp_qul_flag) + ' ' + 
+                    frag.name + '\n')

@@ -63,22 +63,21 @@ logger.info('Files: ' + str(data_files_to_process))
 def Process(data_file, config):
 	# Create ChrFragments object, load fragments from sam/bam file
 	cf = chrfragments.ChrFragments(data_file, config)
-	# Save translocations to separate temporary files 
-	# (not use global array to enable parallelism)
-	cf.SaveTranslocationsToTmp()
 	# Calculate different chromosome statistics
 	cf.CollectStats()
 	# Print collected stats
 	cf.PrintStats()
-	# Split normal and abnormal fragments
-	cf.SplitNormAbnorm()
-	# Write normal fragments to a file
-	cf.WriteNormal()
-	# Cluster abnormal fragments
-	cf.PerformClustering()
+	# Main loading (collect abnormal fragments to memory,
+	# write normal to file)
+	cf.MainLoad()
 	# Write stats for one chromosome to temporary file
 	# (not use global dict to enable parallelism)
 	cf.SerializeStatsToTmp()
+	# Save translocations to separate temporary files 
+	# (not use global array to enable parallelism)
+	cf.SaveTranslocationsToTmp()
+	# Cluster abnormal fragments
+	cf.PerformClustering()
 
 # Process data files in several threads
 # according to configuration
