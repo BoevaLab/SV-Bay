@@ -1,5 +1,6 @@
 import glob
 import logging
+import resource
 from cluster import *
 from numpy import arange,array,ones,linalg
 from pylab import *
