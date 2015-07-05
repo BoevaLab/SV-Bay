@@ -194,8 +194,16 @@ class ChrFragments(object):
             logger.info('Unsupported extension in load_sam_file')
             return
         
+        # Dict to link first and secont read
+        # by ordered key of name, 2 chromosomes and 2 positions
+        # value is the first observed read
         mate_reads = dict()
-        short_keys = set() 
+        # Dict to skip duplicates
+        # by key of 2 chromosomes and 2 positions (without name)
+        # Value is 1 if read1 is processed,
+        # 2 if read 2 is processed and 3 if both
+        short_key_reads_processed = dict()
+
         for read in sam_in.fetch():
             reads_processed += 1
             if reads_processed % 1000000 == 0:
@@ -214,29 +222,35 @@ class ChrFragments(object):
             # Otherwise combine 2 reads and remove key from dictionary
             # Short keys are keys without name - use them not to 
             if read.is_read1:
-                key = (read.qname,read.tid, read.pos, read.rnext, read.pnext)
-                short_key = (read.tid, read.pos, read.rnext, read.pnext)
+                short_key = str(read.tid) + str(read.pos) + str(read.rnext) + str(read.pnext)
             else:
-                key = (read.qname,read.rnext, read.pnext, read.tid, read.pos)
-                short_key = (read.rnext, read.pnext, read.tid, read.pos)
+                short_key = str(read.rnext) + str(read.pnext) + str(read.tid) + str(read.pos)
+            key = read.qname + short_key
 
+            # Skip duplicates
+            cur_read_num = 1 if read.is_read1 else 2
+            if short_key in short_key_reads_processed:
+                rp = short_key_reads_processed[short_key]
+                if rp == 3: # Both reads processed, skip
+                    continue
+                # Just one processed
+                if rp == cur_read_num: # This read processed, skip
+                    continue
+                else: # Mark that both reads are processed and go on
+                    short_key_reads_processed[short_key] = 3
+            else: # Mark that one read is processed and go on
+                short_key_reads_processed[short_key] = cur_read_num
+
+            # No worry about duplicates now
             if key not in mate_reads:
                 mate_reads[key] = read
             else:
-                # Protection against wrong duplicates processing
-                if short_key in short_keys :
-                    continue
-                else:
-                    short_keys.add(short_key)
-
                 frag = fragment.Fragment()
                 frag.from_reads(read, mate_reads[key], sam_in)
-
                 if frag.unique_flag or frag.mapp_qul_flag:
                     frag_callback(frag)
                 else:
                     continue
-
                 del mate_reads[key]
 
         sam_in.close()
