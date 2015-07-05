@@ -58,7 +58,7 @@ class Cluster(object):
 	__slots__ = ('name', 'begin', 'end', 'middle', 'length', 'num_elements', 'size_type', 'direction_type', 'chr1', 'chr2', \
 				'rightmost_begin', 'leftmost_end', 'min_fragment_length', 'max_fragment_length', \
 				'min_fragment_ends_sum' , 'max_fragment_ends_sum', 'mean_length_frag', \
-				'probability', 'framgment_len_sum', 'read_len', 'gamma_alelles', 'fragments_arr', 'A1', 'B2',
+				'probability', 'framgment_len_sum', 'read_len', 'gamma_alelles', 'A1', 'B2',
 				'sublink1', 'sublink2', 'flanking_regions')
 
 	# Init Cluster simply from all attributes valuses
@@ -66,7 +66,7 @@ class Cluster(object):
 				num_elements, size_type, direction_type, \
 				chr1, chr2, rightmost_begin, leftmost_end, \
 				min_fragment_length, max_fragment_length, min_fragment_ends_sum, max_fragment_ends_sum, \
-				probability, framgment_len_sum, gamma_alelles, fragments_arr, mean_length_frag, A1, B2):
+				probability, framgment_len_sum, gamma_alelles, mean_length_frag, A1, B2):
 		self.name = name	
 		self.begin = begin
 		self.end = end
@@ -90,7 +90,6 @@ class Cluster(object):
 			self.probability = probability
 		self.framgment_len_sum = framgment_len_sum
 		self.gamma_alelles = gamma_alelles
-		self.fragments_arr = []
 		self.read_len = 50
 		if not A1:
 			self.A1 = ''
@@ -146,7 +145,6 @@ class Cluster(object):
 			size_type = 'smaller'
 		min_fragment_length = min(lengths)
 		max_fragment_length = max(lengths)
-		fragments_arr = fragments
 		A1 = ''
 		B2 = ''
 		return cls (name, \
@@ -168,7 +166,6 @@ class Cluster(object):
 					probability, \
 					framgment_len_sum, \
 					gamma_alelles, \
-					fragments_arr, \
 					mean_length_frag, \
 					A1, \
 					B2)
@@ -198,7 +195,6 @@ class Cluster(object):
 		mean_length_frag, \
 		A1, \
 		B2) = string.rstrip('\r\n').split(';')
-		fragments_arr =[]
 		return cls (name, \
 			int(begin), \
 			int(end), \
@@ -218,7 +214,6 @@ class Cluster(object):
 			float(probability), \
 			int(framgment_len_sum), \
 			int(gamma_alelles), \
-			fragments_arr, \
 			int(mean_length_frag), \
 			A1, \
 			B2)
