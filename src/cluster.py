@@ -11,7 +11,7 @@ logger = logging.getLogger('main_logger')
 
 # Class representing sublink 
 # (set of begin or end reads of fragments in one cluster)
-class SubLink:
+class SubLink(object):
 	__slots__ = ('is_begin', 'direction', 'name',
 				'safe_start', 'safe_end',
 				'num_elements', 'gamma_alelles',
@@ -40,7 +40,7 @@ class SubLink:
 			self.direction = link.direction_type[1]
 			self.name = link.name + '_2'
 
-class FlankingRegions:
+class FlankingRegions(object):
 	__slots__ = ('A1', 'A2', 'B1', 'B2')
 
 	def __init__(self, flank_A1, flank_A2, flank_B1, flank_B2):
@@ -219,7 +219,7 @@ class Cluster(object):
 			int(framgment_len_sum), \
 			int(gamma_alelles), \
 			fragments_arr, \
-			mean_length_frag, \
+			int(mean_length_frag), \
 			A1, \
 			B2)
 

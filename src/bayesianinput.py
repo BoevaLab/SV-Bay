@@ -1,9 +1,8 @@
 import glob
 import logging
-import resource
-from cluster import *
-from numpy import arange,array,ones,linalg
-from pylab import *
+import cluster
+
+from array import array
 from operator import is_not
 from functools import partial
 
@@ -99,8 +98,8 @@ class BayesianInputData:
 	def __LoadNormalFragments(self, config):
 		logger.info('Loading normal fragments...')
 		for chrom in self.chromosomes:
-			chr_nf_list = []
-			chr_nf_uniq =[]
+			chr_nf_list = array('I')
+			chr_nf_uniq = array('I')
 			f = open(config['working_dir'] + config['normal_fragments_dir'] + 'normal_fragments_' + chrom + '.txt')
 			for line in f:
 				if '| chr |' in line:
@@ -114,7 +113,6 @@ class BayesianInputData:
 			f.close()
 			self.chr_normal_fragments_dict[chrom] = chr_nf_list
 			self.chr_normal_fragments_dict_unique[chrom] = chr_nf_uniq
-		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 	# Load centromere
 	def __LoadCentrom(self, config):
@@ -136,26 +134,26 @@ class BayesianInputData:
 		# chromosomes from config
 		file_names_to_process = []
 		for fname in file_names:
-			if any(chrom in fname for chrom in config['chromosomes']):
-				file_names_to_process.append(fname)
+			for chrom in config['chromosomes']:
+				if ('_' + chrom + '_') in fname:
+					file_names_to_process.append(fname)
+					break
 
 		for fname in file_names_to_process:
 			logger.debug(fname)
 			f = open(fname)
 			for line in f:
-				self.links.append(Cluster.from_string(line))
+				self.links.append(cluster.Cluster.from_string(line))
 				if self.links[-1].num_elements not in self.numb_elem:
 					self.numb_elem.append(self.links[-1].num_elements)
 			f.close()
-		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 		# Sort numb elem and remove smallest numbers
 		logger.info('Constructing sublinks...')
 		self.numb_elem = sorted(self.numb_elem)
 		biggest_normal = stats['per_chr_stats'][config['chromosomes'][0]]['biggest_normal']
 		for link in self.links:
-			link.sublink1 = SubLink(link, True, biggest_normal)
-			link.sublink2 = SubLink(link, False, biggest_normal)
-		logger.info('Done, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
+			link.sublink1 = cluster.SubLink(link, True, biggest_normal)
+			link.sublink2 = cluster.SubLink(link, False, biggest_normal)
 
 	# Load lenght probabilities
 	def __LoadLengthProbabilities(self, config, stats):
@@ -181,7 +179,6 @@ class BayesianInputData:
 
 	# Load FREEC results
 	def __LoadFreec(self,config, chrom):
-		logger.debug('I am here! Burn in the Hell!')
 		#for chrom in self.chromosomes:
 		f = open(config['working_dir'] + config['cnv_file'],'r')
 		self.chr_cnv_dict[chrom]=[]
@@ -411,7 +408,7 @@ class BayesianInputData:
 			logger.debug(str(i)+ ' Fgc = '+str(Fgc_Ngc_abnorm[i]['Fgc'])+ ' Ngc = '+str(Fgc_Ngc_abnorm[i]['Ngc']))
 		
 		#UnloadChrom(config, chrom)
-		f = open(config['working_dir']+'lambda_wt_FR.txt','w')
+		f = open(config['working_dir'] + config['lambda_file'], 'w')
 		f.write('Normal lambda '+'\n')
 		for i in lambda_norm:
 			f.write(str(i[0])+' '+str(i[1]))

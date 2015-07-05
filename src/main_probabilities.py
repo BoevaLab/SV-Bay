@@ -6,7 +6,9 @@ import bisect
 from joblib import Parallel, delayed
 from bayesian import *
 from bayesianinput import *
+import cluster
 import utils
+import resource
 
 # Parse command line arguments to get config file name
 parser = optparse.OptionParser()
@@ -158,7 +160,7 @@ def CreateFR(name, begin, end):
 def SetFlankingRegions(current_links):
 	for l in current_links:
 		logger.debug('Setting flanking regions for link ' + l.name)
-		l.flanking_regions = FlankingRegions([], [], [], [])
+		l.flanking_regions = cluster.FlankingRegions([], [], [], [])
 		l.flanking_regions.A1 = CreateFR('A1', l.sublink1.left_neighbor_end, l.sublink1.safe_start)
 		l.flanking_regions.A2 = CreateFR('A2', l.sublink1.safe_end, l.sublink1.right_neighbor_begin)
 		l.flanking_regions.B1 = CreateFR('B1', l.sublink2.left_neighbor_end, l.sublink2.safe_start)
@@ -202,6 +204,8 @@ if all_in_mem:
 	logger.info('Loading chrom and gem lines, patience...')
 	for chrom in chromosomes:
 		input_data.LoadChrom(config, chrom)
+
+logger.info('Done loading data, memory consumed: ' + str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 # Procceed for all sizes (number of links) from the smallest to the biggest
 # Skip clusters with very small number of elements (< 4) as noise
