@@ -8,8 +8,7 @@ import sys
 logger = logging.getLogger('main_logger')
 
 # Get chrom and gem parts for abnormal region
-def AbnRegion(link, read_length, median, biggest_normal, chrom1_line, chrom2_line, gem_line_chr1, gem_line_chr2):
-	exp_direction = 'rf'
+def AbnRegion(link, read_length, median, biggest_normal, chrom1_line, chrom2_line, gem_line_chr1, gem_line_chr2, exp_direction):
 	shift = biggest_normal
 	if 	link.rightmost_begin + read_length - link.begin > shift or \
 		link.end - link.leftmost_end + read_length > shift:
@@ -243,12 +242,11 @@ def BuildGammaSet(gamma_best, biggest_normal, num_abnormal, numb_all_abn, exp_nu
 	return gamma_set
 
 # Create set of models to check
-def BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, direction_type):
+def BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, exp_dir, direction_type):
 	logger.debug('Time to check the BuildModelsTestSet ')
-	models_test_set = []
-	exp_dir = 'rf'
 	logger.debug('Expected and actual direction: ' + exp_dir + ' ' + direction_type)
 
+	models_test_set = []
 	for gamma in gamma_set:
 		pairs_betta2 = []
 		pairs_alpha1 = []
@@ -391,6 +389,7 @@ def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 	median = stats['per_chr_stats'][chrom1]['median']
 	numb_all_abn = stats['per_chr_stats'][chrom1]['num_all_abn']
 	biggest_normal = stats['per_chr_stats'][chrom1]['biggest_normal']
+	expected_direction = stats['per_chr_stats'][chrom1]['flag_direction']
 	D = stats['per_chr_stats'][chrom1]['R']
 	out_put_prob = open(config['working_dir'] + config['links_probabilities_file'], 'a')
 	output_links = open(config['working_dir'] + config['valid_links_dir'] + chrom1 + '_' + chrom2 + '_valid_links_4.txt', 'a')
@@ -413,7 +412,7 @@ def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 			(exp_numb_B1, obs_numb_B1, betta_1_best, betta_1_set) = \
 				InitFR('B1', l.flanking_regions.B1, chrom_line_B, gem_line_B, l.chr2, read_length, median, cummulative_length_probabilities, lambda_norm_index, normal_fragments, config, stats)
 
-		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(l,read_length,median,biggest_normal,chrom_line_A,chrom_line_B,gem_line_A ,gem_line_B)
+		(abn_reg_chr,abn_reg_right_chrom,abn_reg_gem,abn_reg_right_gem) = AbnRegion(l, read_length, median, biggest_normal, chrom_line_A, chrom_line_B, gem_line_A, gem_line_B, expected_direction)
 		exp_num_G = ExpNumFrag(abn_reg_chr, abn_reg_gem, read_length, median, cummulative_length_probabilities, lambda_abnorm_index, 1, config['ploidy'],abn_reg_right_gem,abn_reg_right_chrom, stats)
 		if exp_num_G * config['ploidy'] < 1:
 			gamma_best = 0
@@ -423,7 +422,7 @@ def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 		numb_all_links = len(input_data.links)
 		prob_zero = config['exp_num_sv'] / float(numb_all_links)
 		gamma_set = BuildGammaSet(gamma_best, biggest_normal, l.num_elements, numb_all_abn, exp_num_G, chrom_line_A,numb_all_links)
-		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, l.direction_type)
+		models_test_set = BuildModelsTestSet(gamma_set, alpha_1_set, alpha_2_set, betta_1_set, betta_2_set, expected_direction, l.direction_type)
 		logger.debug('All the models are ' + str(models_test_set))
 		logger.debug('********** I finished create the set of the models **********')
 
