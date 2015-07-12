@@ -135,7 +135,7 @@ for combination_chr in combinations_chr:
 	# We order translocation reads while loading, c1 is always less than c2
 	if c1 >= c2:
 		continue
-	M = 1.2 * stats_to_serialize['per_chr_stats'][c1]['biggest_normal']
+	M = stats_to_serialize['per_chr_stats'][c1]['biggest_normal']
 	S = stats_to_serialize['per_chr_stats'][c1]['smallest_normal']
 	exp_dir = stats_to_serialize['per_chr_stats'][c1]['flag_direction']
 	
