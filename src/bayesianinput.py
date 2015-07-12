@@ -62,6 +62,12 @@ class BayesianInputData:
 	def LoadChrom(self, config, chrom):
 		self.__LoadGem(config, chrom)
 		self.__LoadChromLine(config, chrom)
+		if len(self.chr_gem_dict[chrom]) != len(self.chr_line_dict[chrom]):
+			logger.warning('Lengths of .fa and .gem sequences do not match for chrom ' + chrom + \
+				' (' + str(len(self.chr_line_dict[chrom])) + ' and ' + str(len(self.chr_gem_dict[chrom])) + ')')
+			logger.warning('Some flanking regions will be truncated to match the minimal length \
+				and some links (intersecting with chrom tail) will be dropped.')
+			logger.warning('Please fix your .gem file.')
 		self.__LoadFreec(config,chrom)
 
 	def UnloadChrom(self, chrom):

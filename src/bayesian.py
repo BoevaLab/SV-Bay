@@ -382,6 +382,8 @@ def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 	chrom_line_B = input_data.chr_line_dict[chrom2]
 	gem_line_A = input_data.chr_gem_dict[chrom1]
 	gem_line_B = input_data.chr_gem_dict[chrom2]
+	chrom_end_A = min(len(gem_line_A), len(chrom_line_A))
+	chrom_end_B = min(len(gem_line_B), len(chrom_line_B))
 
 	read_length = config['read_length']
 
@@ -397,6 +399,14 @@ def BayesianModels(input_data, links_to_process, chrom1, chrom2, config, stats):
 	logger.debug('Links to process in total: ' + str(len(links_to_process)))
 
 	for l in links_to_process:
+		logger.info('Processing link ' + l.to_string() + ' with flanking regions ' + str(l.flanking_regions.A1) + ', ' \
+			+ str(l.flanking_regions.A2) + ', ' + str(l.flanking_regions.B1) + ', ' + str(l.flanking_regions.B2))
+		if (l.flanking_regions.A1 and l.flanking_regions.A1[1] >= chrom_end_A) or \
+			(l.flanking_regions.A2 and l.flanking_regions.A2[1] >= chrom_end_A) or \
+			(l.flanking_regions.B1 and l.flanking_regions.B1[1] >= chrom_end_B) or \
+			(l.flanking_regions.B2 and l.flanking_regions.B2[1] >= chrom_end_B):
+			logger.warning('Skipped link on the chrom end - hack to avoid different fa/gem len problem.')
+			continue
 		logger.debug('********** Creating set of models for link: ' + l.name + '**********')
 		flag_equal = l.flanking_regions.B1 and l.flanking_regions.A2 and l.flanking_regions.B1 == l.flanking_regions.A2
 

@@ -242,8 +242,9 @@ for curr_num in input_data.numb_elem[4:]:
 		logger.info('Number of sub links for chr ' + chrom + ' with ' + str(curr_num) + \
 			' elements: ' + str(len(curr_sublinks_chr)))
 
-		FindNeighbors(curr_sublinks_chr, all_sublinks_chr, input_data.chr_centrom_dict[chrom], \
-			chrom, len(input_data.chr_line_dict[chrom]), curr_num)
+		safe_chr_len = min(len(input_data.chr_line_dict[chrom]), len(input_data.chr_gem_dict[chrom])) - 1
+		FindNeighbors(curr_sublinks_chr, all_sublinks_chr, \
+			input_data.chr_centrom_dict[chrom], chrom, safe_chr_len, curr_num)
 		ProcessChromosome(input_data, curr_num, chrom, all_in_mem)
 		# Unload fa and gem 
 		if not all_in_mem:
