@@ -1,7 +1,10 @@
-All sources are stored in "src" folder.
-Folder "data" contains input data to test SV-Bay.
+SV-Bay: structural variant detection in cancer genomes using a Bayesian approach with correction for GC-content and read map-pability
 
-SV-Bay is written in Python with small insertions in c++ code. To run the code on the expected time, we suggest to use Python 2.7 (difference with 2.6 is more then 3 times). The following libraries should be installed:
+All sources are stored in the "src" folder.
+Folder "data" contains input data to test the SV-Bay code.
+
+SV-Bay is written in Python with small insertions in C++ code. 
+To run the code on the expected time, we suggest to use Python 2.7 (difference with 2.6 is more then 3 times). The following libraries should be installed:
  
 yaml
 joblib
