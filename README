@@ -1,4 +1,4 @@
-SV-Bay: structural variant detection in cancer genomes using a Bayesian approach with correction for GC-content and read map-pability
+SV-Bay: structural variant detection in cancer genomes using a Bayesian approach with correction for GC-content and read mappability
 
 All sources are stored in the "src" folder.
 Folder "data" contains input data to test the SV-Bay code.
