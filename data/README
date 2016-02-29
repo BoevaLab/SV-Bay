@@ -10,13 +10,14 @@ http://xfer.curie.fr/get/eGalAkbo3Lg/bam_constit.zip
 3. Download and unzip .fa files with chromosome sequences from http://xfer.curie.fr/get/0dbKajSuTuZ/fa_files.zip
 
 *Notice:* SV-Bay only accepts files per chromosome. If you have one GEM and one BAM file for the whole genome, please use the following scripts to split them up:
-for GEM files:
-'python src/utils/sep_save_gem.py -i yourBigGEMfile.gem  -o outputDir/
-python src/utils/separately_save_sam_samtools.py -i yourBigBAMfile.bam -o outputDir/'
+For GEM files:
+python src/utils/sep_save_gem.py -i yourBigGEMfile.gem  -o outputDir/
+For BAM files:
+python src/utils/separately_save_sam_samtools.py -i yourBigBAMfile.bam -o outputDir/
 
 What you can find in this folder:
 
-*simulated_reads_cnv.txt - output of Control-FREEC on the test data
-*centrom_hg19.txt - files with positions of centromere/telomere/unassabled regions to exclude
-*centrom_hg38.txt - files with positions of centromere/telomere/unassabled regions to exclude - to use for this example
-*config - a folder with two config files - for a constitutive (control) sample (config_germ.yaml) and a tumor sample (config.yaml)
+simulated_reads_cnv.txt - output of Control-FREEC on the test data
+centrom_hg19.txt - files with positions of centromere/telomere/unassabled regions to exclude
+centrom_hg38.txt - files with positions of centromere/telomere/unassabled regions to exclude - to use for this example
+config - a folder with two config files - for a constitutive (control) sample (config_germ.yaml) and a tumor sample (config.yaml)
