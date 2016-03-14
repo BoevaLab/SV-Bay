@@ -650,7 +650,8 @@ coamplifications =[]
 coamplf_lagre_dupl = [link for link in coamplf_lagre_dupl if link.num_elements>30]
 coamplf_lagre_dupl.sort(key = sortLinks)
 #coamp = [coamplf_lagre_dupl[0]]
-coamp_link = coamplf_lagre_dupl[0]
+if coamplf_lagre_dupl:
+	coamp_link = coamplf_lagre_dupl[0]
 #for k in coamplf_lagre_dupl:
 #		print Cluster.to_string(k)
 coamp =[]
