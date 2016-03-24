@@ -3,6 +3,8 @@ import os
 import pysam
 import resource
 from scipy.stats import norm
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import bisect
 import yaml
