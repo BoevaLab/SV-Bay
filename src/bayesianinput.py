@@ -80,7 +80,8 @@ class BayesianInputData:
 
 	# Load gem file
 	def __LoadGem(self, config, chrom):
-		f = open(config['working_dir'] + config['gem_files_dir'] + chrom + '_gem.txt')
+		#f = open(config['working_dir'] + config['gem_files_dir'] + chrom + '_gem.txt')
+		f = open(config['working_dir'] + config['gem_files_dir'] + chrom + '.gem')
 		gem_line = ''
 		for line in f:
 			if '~' not in line:
