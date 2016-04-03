@@ -83,7 +83,7 @@ Preparation of the example data to run SV-Bay is shown below:
 ```
 mkdir sv-bay-data/ && cd sv-bay-data
 mkdir bam && cd bam
-wget http://xfer.curie.fr/get/P7Yi1lyCPMJ/bam_tumor.zip && unzip bam_tumor.zip && mv bam_tumor/* . && cd ..
+wget https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz?dl=0 && unzip bam_tumor.zip && mv bam_tumor/* . && cd ..
 mkdir fa_files && cd fa_files
 wget http://xfer.curie.fr/get/2mRqHdYxzw4/hg38_chromosomes_fa.zip && unzip hg38_chromosomes_fa.zip && cd ..
 mkdir gem_files && cd gem_files
