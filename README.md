@@ -60,7 +60,7 @@ Input data
 
 SV-Bay requires a number of input files to work. It can look a bit confusing, but most of this files are common for human genome and can be simply downloaded. Config options related to input are described below:
 
-__sam_files_dir : "bam/"__ Input directory with per-chromosome bam or sam files. Bam should be sorted and indexed, .bam.bai files should be in the same folder. Name of file for each chromosome must contain "chrSomething" in it's name, e.g. "chr7_sorted.bam" or "chrX.sam". You can download example tumor and germ bam files for chromosomes 14, 15, 17 to test SV-Bay: https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz?dl=0 and https://www.dropbox.com/s/x7j8ufc7exohkrp/bam_germ.tar.gz?dl=0 . If you have one bam for the whole genome, use utils/separately_save_sam.py script to split it:
+__sam_files_dir : "bam/"__ Input directory with per-chromosome bam or sam files. Bam should be sorted and indexed, .bam.bai files should be in the same folder. Name of file for each chromosome must contain "chrSomething" in it's name, e.g. "chr7_sorted.bam" or "chrX.sam". You can download example tumor and germ bam files for chromosomes 14, 15, 17 to test SV-Bay: https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz and https://www.dropbox.com/s/x7j8ufc7exohkrp/bam_germ.tar.gz. If you have one bam for the whole genome, use utils/separately_save_sam.py script to split it:
 
 ```
 python src/utils/separately_save_sam_samtools.py -i yourBigBAMfile.bam -o outputDir/
@@ -83,7 +83,7 @@ Preparation of the example data to run SV-Bay is shown below:
 ```
 mkdir sv-bay-data/ && cd sv-bay-data
 mkdir bam && cd bam
-wget https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz?dl=0 && unzip bam_tumor.zip && mv bam_tumor/* . && cd ..
+wget https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz && tar xzf bam_tumor.tar.gz && mv bam_tumor/* . && cd ..
 mkdir fa_files && cd fa_files
 wget http://xfer.curie.fr/get/2mRqHdYxzw4/hg38_chromosomes_fa.zip && unzip hg38_chromosomes_fa.zip && cd ..
 mkdir gem_files && cd gem_files
