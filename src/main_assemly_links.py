@@ -432,7 +432,7 @@ links=[]
 
 
 file_names_tumor = glob.glob(config['working_dir'] + config['valid_links_dir'] + '*.txt')
-print file_names_tumor	
+#print file_names_tumor	
 #Create links out of strings
 for fname in file_names_tumor:
 	t = open(fname)
@@ -496,8 +496,6 @@ links_normal.sort(key = sortLinks)
 
 
 
-print chromosomes
-print len(links)
 coamplf_lagre_dupl=[]
 #Separate coamplifiacation from other SVs
 coamplf_lagre_dupl = [link for link in links if link.gamma_alelles > config['numb_allel']]
@@ -520,7 +518,7 @@ for chrom in chromosomes:
 
 curr_links=[]
 #link_file = open('/Users/dasha/PhD/results_3_tools/assembly_ga_nodup1','w')
-print 'chrom1','\t', 'bp_pos1','\t','chrom2','\t','bp_pos2','\t','num elements','\t', 'probability','\t', 'type_sv', '\t','direction'
+print 'chrom1','\t', 'bp_pos1','\t','chrom2','\t','bp_pos2','\t','length','\t','num elements','\t', 'probability','\t', 'type_sv', '\t','direction'
 
 for (chr1,chr2) in itertools.combinations(chromosomes,2):
 	links.sort(key = sortLinks)
@@ -567,7 +565,7 @@ for (chr1,chr2) in itertools.combinations(chromosomes,2):
 					bp_pos2 = ((int(i.leftmost_end)-median)+int(i.end))/2
 					direction+='+'
 					#bp_pos2 = i.end
-				print i.chr1,'\t' ,bp_pos1,'\t' ,i.chr2,'\t' , bp_pos2,'\t', i.num_elements,'\t', i.probability,'\t', type_sv, '\t',direction[0], '\t',direction[1]
+				print i.chr1,'\t' ,bp_pos1,'\t' ,i.chr2,'\t' , bp_pos2,'\t','-','\t', i.num_elements,'\t', i.probability,'\t', type_sv, '\t',direction[0], '\t',direction[1]
 				#link_file.write(Cluster.to_string(i)+'\n')
 		for sv_link in sv_links:
 			if sv_link.chr1==sv_link.chr2:
@@ -710,7 +708,7 @@ while coamplf_lagre_dupl:
 				bp_pos2 = ((int(i.leftmost_end)-median)+int(i.end))/2
 				direction+='+'
 				#bp_pos2 = i.end
-			print i.chr1,'\t' ,bp_pos1,'\t' ,i.chr2,'\t' , bp_pos2,'\t', i.num_elements,'\t', i.probability,'\t','coamplification', '\t',direction[0], '\t',direction[1]
+			print i.chr1,'\t' ,bp_pos1,'\t' ,i.chr2,'\t' , bp_pos2,'\t','-','\t', i.num_elements,'\t', i.probability,'\t','coamplification', '\t',direction[0], '\t',direction[1]
 		print '-----------------------------------------------------------------------------------'	
 		if coamplf_lagre_dupl:
 			coamp_link = coamplf_lagre_dupl[0]
