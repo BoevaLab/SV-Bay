@@ -64,3 +64,6 @@ read_length : 50
 ploidy : 4.0
 # Minimum alleles to mark SV as co-amplification
 numb_allel : 8
+# Accept reads without AM flag (if set to 0,
+# sv-bay immidiately fails when read without AM is observed)
+accept_no_am: 0

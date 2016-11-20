@@ -9,11 +9,19 @@ logger = logging.getLogger('main_logger')
 # AM is basically always present,
 # but it's safer to check for errors
 # and return 0 if it's not
-def has_good_mq(read):
+def has_good_mq(read, accept_no_am):
 	try:
 		return 1 if int(read.opt('AM')) >= 20 else 0
 	except KeyError:
-		return 0
+		if accept_no_am:
+			return 1 if read.mapping_quality >= 20 else 0
+		else:
+			print 'Observed read without AM flag, most likely it is produced by bwa-mem or bwa 2012.'
+			print 'AM flag provides common mapping quality for 2 reads in fragment, '
+			print 'if flag is not provided algorithm would suppouse that both reads have high quality'
+			print 'if one read in the pair have high quality (leftmost). This would reflect in the statistics accurancy'
+			print 'Please consider re-aligning data with bwa 2008 for better results. If you really want to use '
+			print 'MQ instead of MA, please set \'accept_no_am\' to 1 in config.yaml'
 
 # We use XT to determine that read is uniquely mapped
 # instead of mapping quality, because mapq may take into account read lenghts
@@ -33,7 +41,7 @@ def is_unique(read):
 class Fragment(object):
 	__slots__ = ('first_read_chr', 'second_read_chr', 'begin', 'end', 'length', 'middle', 'direction', 'name','unique_flag','mapp_qul_flag')
 		
-	def from_reads(self, read_a, read_b, sam_in):
+	def from_reads(self, read_a, read_b, sam_in, accept_no_am):
 		# r1 and r2 are ordered (r1 - left, r2 - right)
 		# Different ordering logic for
 		# intra-chr fragment and translocation
@@ -53,7 +61,7 @@ class Fragment(object):
 		self.direction += 'r' if r2.is_reverse else 'f'
 		self.name = r1.qname
 		self.unique_flag = is_unique(r1) * is_unique(r2)
-		self.mapp_qul_flag = has_good_mq(r1) * has_good_mq(r2)
+		self.mapp_qul_flag = has_good_mq(r1, accept_no_am) * has_good_mq(r2, accept_no_am)
 
 	# Constructor from all fields values
 	def from_all_args(self, name, first_read_chr, second_read_chr, \

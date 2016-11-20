@@ -179,6 +179,7 @@ class ChrFragments(object):
 
     # Load .sam file into array of fragments (pysam-based)
     def __LoadSam(self, sam_file, max_reads, frag_callback):
+        accept_no_am = self.config['accept_no_am']
         num_unmapped_pairs = 0
         num_bad_quality = 0
         reads_processed = 0
@@ -248,7 +249,7 @@ class ChrFragments(object):
                 mate_reads[key] = read
             else:
                 frag = fragment.Fragment()
-                frag.from_reads(read, mate_reads[key], sam_in)
+                frag.from_reads(read, mate_reads[key], sam_in, accept_no_am)
                 if frag.unique_flag or frag.mapp_qul_flag:
                     frag_callback(frag)
                 else:
