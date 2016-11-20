@@ -60,7 +60,8 @@ Input data
 
 SV-Bay requires a number of input files to work. It can look a bit confusing, but most of this files are common for human genome and can be simply downloaded. Config options related to input are described below:
 
-__sam_files_dir : "bam/"__ Input directory with per-chromosome bam or sam files. Bam should be sorted and indexed, .bam.bai files should be in the same folder. Name of file for each chromosome must contain "chrSomething" in it's name, e.g. "chr7_sorted.bam" or "chrX.sam". You can download example tumor and germ bam files for chromosomes 14, 15, 17 to test SV-Bay: https://www.dropbox.com/s/zcojeehmhkygli4/bam_tumor.tar.gz and https://www.dropbox.com/s/x7j8ufc7exohkrp/bam_germ.tar.gz. If you have one bam for the whole genome, use utils/separately_save_sam.py script to split it:
+__sam_files_dir : "bam/"__ Input directory with per-chromosome bam or sam files. Bam should be sorted and indexed, .bam.bai files should be in the same folder. Name of file for each chromosome must contain "chrSomething" in it's name, e.g. "chr7_sorted.bam" or "chrX.sam".
+If you have one bam for the whole genome, use utils/separately_save_sam.py script to split it:
 
 ```
 python src/utils/separately_save_sam_samtools.py -i yourBigBAMfile.bam -o outputDir/
@@ -128,4 +129,16 @@ The script main_assemly_links.py can also exclude germline mutations, if the res
 ```
 python -B src/main_clustering.py -c config/config_germ.yaml
 python -B src/main_assemly_links.py -c config/config.yaml -n '/home/sv-bay/sv-bay-data-germ/cluster_files/' > results
+```
+###Test data
+Please download example tumor and control bam files for chromosomes 14, 15, 17 to test SV-Bay [here](https://www.dropbox.com/s/lxrb10l0ac6a2if/SV-Bay-Test.tar.gz?dl=0), this is tar.gz file approximately 1.7GB which contains all data that you would need to run the tool for 3 chromosomes:
+  * separated fasta files (hg38 version)
+  * .gem files 
+  * bam files for tumor samples
+  * bam files for control samples
+  * Results of FREEC tool run (for tumor sample)
+  * list of centromeres (hg38 version)
+Config file for test data is located in 
+```
+config/config_test/config_tumor.yaml
 ```
