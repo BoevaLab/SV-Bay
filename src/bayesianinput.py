@@ -352,16 +352,22 @@ class BayesianInputData:
 				if ind_left % 50000 == 0:
 					logger.debug('Already processed ' + str(ind_left) + ' fragments, left ' + str(len(normal_fragments_normal) - ind_left))
 				if i % step == 0:
-					if gc_gem_normal[i / step] != 'n':
-						Fgc_Ngc_norm[gc_gem_normal[i / step]]['Fgc'] += 1
+					if (i / step)>len(gc_gem_normal)-1:
+						continue
+					else:
+						if gc_gem_normal[i / step] != 'n':
+							Fgc_Ngc_norm[gc_gem_normal[i / step]]['Fgc'] += 1
 				ind_left = 0
 			for i in normal_fragments_unique:
 				if i > len(chrom_line) - max_boundaries:
 					break
 				ind_left += 1	
 				if i % step == 0:
-					if gem_val_abnormal[i/step]!=-1:
-						Fgc_Ngc_abnorm[gc_rate[i/step]]['Fgc'] += 1
+					if (i / step)>len(gc_gem_normal)-1:
+						continue
+					else:
+						if gem_val_abnormal[i/step]!=-1:
+							Fgc_Ngc_abnorm[gc_rate[i/step]]['Fgc'] += 1
 			if count == 2:
 				break
 		lambda_norm = []
