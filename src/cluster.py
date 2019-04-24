@@ -339,7 +339,7 @@ def KMeansSplit(fragments, D):
 		if iters > 10:
 			break
 		# kmeans
-		(res_my, idx_my) = kmeans2(array(zip(x)).astype(float), k)
+		(res_my, idx_my) = kmeans2(array(zip(x)).astype(float), k,minit='points')
 		# Form new clusters by kmeans results
 		nc = [[] for num_cl in xrange(k)]
 		for i in xrange(len(idx_my)):
