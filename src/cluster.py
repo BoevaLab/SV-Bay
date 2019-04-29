@@ -362,7 +362,8 @@ def KMeansSplit(fragments, D):
 		remaining_fragments = sorted(remaining_fragments, key = sortFragMid)
 		x = [frag.middle for frag in remaining_fragments]
 		k = int(math.ceil(float(remaining_fragments[-1].middle - remaining_fragments[0].middle) / D))
-
+		if k > len(x):
+			k=len(x)
 	if iters > 10:
 		logger.debug('Cluster was not split completely in kmeans, left : ' + str(len(remaining_fragments)) + ' fragments of ' + str(len(fragments)))
 		logger.debug('But ' + str(len(resulting_clusters)) + ' resulting clusters were formed')
