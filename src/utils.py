@@ -50,9 +50,14 @@ def check_dirs_probabilities(config):
 	check_dir('clusters_files_dir', clusters_files_dir, True)
 
 	fa_files_dir = config['working_dir'] + config['fa_files_dir']
+	if (config['fa_files_dir'][0]=='/') or (config['fa_files_dir'][0]=='\\'):
+		fa_files_dir = config['fa_files_dir']	
+
 	check_dir('fa_files_dir', fa_files_dir, True)
 
 	gem_files_dir = config['working_dir'] + config['gem_files_dir']
+	if (config['gem_files_dir'][0]=='/') or (config['gem_files_dir'][0]=='\\'):
+		gem_files_dir = config['gem_files_dir']	
 	check_dir('gem_files_dir', gem_files_dir, True)
 
 	valid_links_dir = config['working_dir'] + config['valid_links_dir']
