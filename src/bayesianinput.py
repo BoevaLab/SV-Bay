@@ -81,7 +81,10 @@ class BayesianInputData:
 	# Load gem file
 	def __LoadGem(self, config, chrom):
 		#f = open(config['working_dir'] + config['gem_files_dir'] + chrom + '_gem.txt')
-		f = open(config['working_dir'] + config['gem_files_dir'] + chrom + '.gem')
+		path_to_gem_file = config['working_dir'] + config['gem_files_dir'] + chrom + '.gem'
+		if (config['gem_files_dir'][0]=='/') or (config['gem_files_dir'][0]=='\\'):
+			path_to_gem_file = config['gem_files_dir'] + chrom + '.gem'
+		f = open(path_to_gem_file)
 		gem_line = ''
 		for line in f:
 			if '~' not in line:
@@ -94,7 +97,10 @@ class BayesianInputData:
 
 	# Load fa file
 	def __LoadChromLine(self, config, chrom):
-		f = open(config['working_dir'] + config['fa_files_dir'] + chrom + '.fa')
+		path_to_fa_file = config['working_dir'] + config['fa_files_dir'] + chrom + '.fa'
+		if (config['fa_files_dir'][0]=='/') or (config['fa_files_dir'][0]=='\\'):
+			path_to_fa_file = config['fa_files_dir'] + chrom + '.fa'
+		f = open(path_to_fa_file)
 		chrom_line = ''
 		for line in f:
 			chrom_line += line.rstrip()
