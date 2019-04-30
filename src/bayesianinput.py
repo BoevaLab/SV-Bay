@@ -89,7 +89,7 @@ class BayesianInputData:
 		if os.path.exists(path_to_gem_file):
 		    logger.debug('Gem file ' + path_to_gem_file +" exists")
 		else:
-		    path_to_gem_file=str.replace(".gem", "_gem")
+		    path_to_gem_file=path_to_gem_file.replace(".gem", "_gem")
 			
 		f = open(path_to_gem_file)
 		gem_line = ''
