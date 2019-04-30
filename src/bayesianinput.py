@@ -1,6 +1,7 @@
 import glob
 import logging
 import cluster
+import os
 
 from array import array
 from operator import is_not
@@ -84,6 +85,12 @@ class BayesianInputData:
 		path_to_gem_file = config['working_dir'] + config['gem_files_dir'] + chrom + '.gem'
 		if (config['gem_files_dir'][0]=='/') or (config['gem_files_dir'][0]=='\\'):
 			path_to_gem_file = config['gem_files_dir'] + chrom + '.gem'
+			
+		if os.path.exists(path_to_gem_file):
+		    logger.debug('Gem file ' + path_to_gem_file +" exists")
+		else:
+		    path_to_gem_file=str.replace(".gem", "_gem")
+			
 		f = open(path_to_gem_file)
 		gem_line = ''
 		for line in f:
