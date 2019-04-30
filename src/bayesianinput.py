@@ -123,7 +123,10 @@ class BayesianInputData:
 
 	# Load centromere
 	def __LoadCentrom(self, config):
-		f = open(config['working_dir'] + config['centromic_file'])
+		centromic_file_path = config['working_dir'] + config['centromic_file']
+		if (config['centromic_file'][0]=='/') or (config['centromic_file'][0]=='\\'):
+			centromic_file_path = config['centromic_file']	
+		f = open(centromic_file_path)
 		for line in f:
 			(chrom, centrom_begin, centrom_end) = line[1:-2].split(',')
 			chrom = chrom[1:-1] 
