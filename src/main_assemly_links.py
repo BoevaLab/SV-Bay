@@ -194,8 +194,8 @@ def rr_transl(link, links,links_chr1, links_chr2,f,r):
 	if overlp:
 		if len(overlp):
 			for i in overlp:
-		 		if i.direction_type == f+f :
-		 			if not coins_ov:
+		 		if (i.direction_type[0] !=  link.direction_type[0] and i.direction_type[1] !=  link.direction_type[1]):   #i.direction_type == f+f :
+					if not coins_ov:
 		 				print 'Balanced translocation with inversion'
 		 				type_Sv_ov = 'Balanced translocation with inversion'
 		 				sv_links.append(i)
